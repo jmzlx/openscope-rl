@@ -1,0 +1,98 @@
+# OpenScope RL Training Configuration
+
+# Environment settings
+env:
+  airport: "KLAS"  # Start with Las Vegas (moderate complexity)
+  timewarp: 5  # Speed up game 5x for faster training
+  max_aircraft: 20  # Maximum aircraft in scenario
+  episode_length: 3600  # 1 hour game time (seconds)
+  action_interval: 5  # Issue commands every 5 seconds
+  game_url: "http://localhost:3003"
+  headless: true  # Run browser in headless mode
+
+# PPO hyperparameters
+ppo:
+  learning_rate: 3.0e-4
+  gamma: 0.99  # Discount factor
+  gae_lambda: 0.95  # GAE parameter
+  clip_epsilon: 0.2  # PPO clipping parameter
+  value_coef: 0.5  # Value loss coefficient
+  entropy_coef: 0.01  # Entropy bonus coefficient
+  max_grad_norm: 0.5  # Gradient clipping
+  n_steps: 2048  # Steps per update
+  n_epochs: 10  # Optimization epochs per update
+  batch_size: 64  # Minibatch size
+  n_envs: 8  # Number of parallel environments
+
+# Network architecture
+network:
+  aircraft_feature_dim: 32  # Features per aircraft
+  global_feature_dim: 16  # Global state features
+  hidden_dim: 256
+  num_attention_heads: 8
+  num_transformer_layers: 4
+  max_aircraft_slots: 20  # Fixed size for padding
+
+# Action space configuration
+actions:
+  # Altitude actions (in hundreds of feet)
+  altitudes: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]
+  # Heading actions (degrees)
+  heading_changes: [-90, -60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60, 90]
+  # Speed actions (knots)
+  speeds: [180, 200, 220, 240, 260, 280, 300, 320]
+  # Note: Command types are currently hardcoded in environment as: ["altitude", "heading", "speed", "ils", "direct"]
+  # special_actions field below is for documentation only and not currently used
+  special_actions: ["ils_approach", "direct_to_exit", "hold", "no_action"]
+
+# Reward shaping
+rewards:
+  # Game events (from scoring system)
+  successful_landing: 10
+  successful_departure: 10
+  collision: -1000
+  separation_loss: -200
+  airspace_bust: -200
+  route_violation: -25
+  go_around: -50
+  
+  # Shaped rewards for learning
+  timestep_penalty: -0.01  # Small cost per step
+  progress_reward: 0.5  # Progress toward goal
+  conflict_warning: -2.0  # Approaching separation minimum
+  safe_separation_bonus: 0.05  # Maintaining safe separation
+  workload_penalty: -0.1  # Too many aircraft waiting
+
+# Curriculum learning
+curriculum:
+  enabled: true
+  stages:
+    - name: "single_arrival"
+      max_aircraft: 1
+      difficulty: "easy"
+      episodes: 1000
+    - name: "few_aircraft"
+      max_aircraft: 3
+      difficulty: "easy"
+      episodes: 2000
+    - name: "moderate_traffic"
+      max_aircraft: 8
+      difficulty: "medium"
+      episodes: 3000
+    - name: "full_traffic"
+      max_aircraft: 20
+      difficulty: "hard"
+      episodes: 10000
+
+# Training settings
+training:
+  total_timesteps: 10000000
+  save_interval: 10000  # Save model every N steps
+  eval_interval: 5000  # Evaluate every N steps
+  eval_episodes: 10
+  checkpoint_dir: "checkpoints"
+  log_dir: "logs"
+  use_wandb: true
+  wandb_project: "openscope-rl"
+  seed: 42
+

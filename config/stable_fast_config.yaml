@@ -1,0 +1,67 @@
+# Stable Fast Configuration - Good balance of speed and reliability
+# This config is proven to work without crashes
+
+env:
+  airport: "KLAS"
+  timewarp: 15  # MODERATE: 15x speed (reliable)
+  max_aircraft: 5
+  episode_length: 900  # 15 minutes - enough time to complete episodes
+  action_interval: 3  # Balanced
+  game_url: "http://localhost:3003"
+  headless: true
+
+ppo:
+  learning_rate: 3.0e-4
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_epsilon: 0.2
+  value_coef: 0.5
+  entropy_coef: 0.01
+  max_grad_norm: 0.5
+  n_steps: 128  # Reasonable rollout size
+  n_epochs: 6    # Moderate training intensity
+  batch_size: 32
+  n_envs: 8
+
+network:
+  aircraft_feature_dim: 32
+  global_feature_dim: 16
+  hidden_dim: 256
+  num_attention_heads: 8
+  num_transformer_layers: 4
+  max_aircraft_slots: 20
+
+actions:
+  altitudes: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]
+  heading_changes: [-90, -60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60, 90]
+  speeds: [180, 200, 220, 240, 260, 280, 300, 320]
+  special_actions: ["ils_approach", "direct_to_exit", "hold", "no_action"]
+
+rewards:
+  successful_landing: 10
+  successful_departure: 10
+  collision: -1000
+  separation_loss: -200
+  airspace_bust: -200
+  route_violation: -25
+  go_around: -50
+  timestep_penalty: -0.01
+  progress_reward: 0.5
+  conflict_warning: -2.0
+  safe_separation_bonus: 0.05
+  workload_penalty: -0.1
+
+curriculum:
+  enabled: false
+
+training:
+  total_timesteps: 100000
+  save_interval: 5000
+  eval_interval: 2500
+  eval_episodes: 5
+  checkpoint_dir: "checkpoints"
+  log_dir: "logs"
+  use_wandb: false
+  wandb_project: "openscope-rl"
+  seed: 42
+
