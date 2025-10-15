@@ -27,16 +27,29 @@ This system trains a Transformer-based neural network to control air traffic in 
 
 ## Installation
 
-1. Install dependencies:
+This project uses [uv](https://github.com/astral-sh/uv) for fast, reliable dependency management.
+
+1. Install uv (if not already installed):
 ```bash
-cd rl_training
-pip install -r requirements.txt
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or with pip
+pip install uv
 ```
 
-2. Install Playwright browsers (for game automation):
+2. Install dependencies:
 ```bash
-playwright install chromium
+cd rl_training
+uv sync
 ```
+
+3. Install Playwright browsers (for game automation):
+```bash
+uv run playwright install chromium
+```
+
+**Note**: `uv sync` automatically creates a virtual environment at `.venv` and installs all dependencies from `pyproject.toml`.
 
 3. Start the openScope game server:
 ```bash
@@ -54,36 +67,36 @@ The game should be running at http://localhost:3003
 
 Basic training with default settings:
 ```bash
-python train.py
+uv run train_sb3.py
 ```
 
-Training with custom config:
+Training with custom config and parallel environments:
 ```bash
-python train.py --config config/training_config.yaml --wandb
+uv run train_sb3.py --config config/training_config.yaml --n-envs 4 --wandb
 ```
 
 Resume from checkpoint:
 ```bash
-python train.py --checkpoint checkpoints/checkpoint_50000.pt
+uv run train_sb3.py --checkpoint checkpoints/checkpoint_50000_steps.zip --n-envs 4
 ```
 
 ### Evaluation
 
 Evaluate a trained model:
 ```bash
-python evaluate.py --checkpoint checkpoints/checkpoint_final.pt --n-episodes 20
+uv run evaluate_sb3.py --checkpoint checkpoints/checkpoint_final.zip --n-episodes 20
 ```
 
 With visualization (non-headless):
 ```bash
-python evaluate.py --checkpoint checkpoints/checkpoint_final.pt --render
+uv run evaluate_sb3.py --checkpoint checkpoints/checkpoint_final.zip --render
 ```
 
 ### Visualize Training Progress
 
-Plot training curves from logs:
+TensorBoard is automatically integrated. View training metrics:
 ```bash
-python visualize_training.py --log-file logs/training_log_20241013.jsonl
+uv run tensorboard --logdir logs/
 ```
 
 ## Configuration
@@ -264,9 +277,10 @@ Use Ray for parallel environment rollouts:
 
 Fine-tune a pre-trained model on a new airport:
 ```bash
-python train.py \
-  --checkpoint models/klas_pretrained.pt \
-  --config config/ksea_finetune.yaml
+uv run train_sb3.py \
+  --checkpoint checkpoints/klas_pretrained.zip \
+  --config config/ksea_finetune.yaml \
+  --n-envs 4
 ```
 
 ## Performance Benchmarks

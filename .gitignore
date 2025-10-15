@@ -10,6 +10,7 @@ build/
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 
@@ -33,6 +34,32 @@ Thumbs.db
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Testing
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Linting
+.ruff_cache/
+
+# Playwright
+.playwright/
+
+# Environment variables
+.env
+.env.local
+
+# Lock files (keep uv.lock)
+*.lock
+!uv.lock
+
 # Model files (optional - uncomment if you want to exclude)
 # *.pt
 # *.pth
+# *.zip

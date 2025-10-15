@@ -1,7 +1,6 @@
 """Utility modules"""
 
-from .logger import Logger
 from .curriculum import CurriculumManager
+from .logger import Logger
 
-__all__ = ['Logger', 'CurriculumManager']
-
+__all__ = ["Logger", "CurriculumManager"]
