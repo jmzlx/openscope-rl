@@ -56,6 +56,9 @@ class BrowserThread:
                     elif method == 'close':
                         self._close_browser()
                         self.result_queue.put((True, None))
+                    elif method == 'evaluate':
+                        result = self.page.evaluate(args[0])
+                        self.result_queue.put((True, result))
                 except Exception as e:
                     self.result_queue.put((False, e))
             except:
@@ -74,8 +77,37 @@ class BrowserThread:
             # Capture JavaScript errors for debugging
             self.page.on("pageerror", lambda err: print(f"❌ JS Error: {err}"))
             
+            # Inject time tracking BEFORE loading the game
+            # This hooks requestAnimationFrame before the game starts using it
+            time_tracking_injection = """
+            (function() {
+                let startTime = null;
+                let accumulatedGameTime = 0;
+
+                const originalRAF = window.requestAnimationFrame;
+                window.requestAnimationFrame = function(callback) {
+                    return originalRAF.call(window, function(timestamp) {
+                        if (startTime === null) {
+                            startTime = timestamp;
+                        }
+                        // Use the DOMHighResTimeStamp provided by RAF (in milliseconds)
+                        accumulatedGameTime = (timestamp - startTime) / 1000;
+                        return callback(timestamp);
+                    });
+                };
+
+                // Expose getter
+                window._getRLGameTime = () => accumulatedGameTime;
+                console.log('✅ RL: Game time tracking hook installed');
+            })();
+            """
+
             # Load the game
             self.page.goto(game_url)
+
+            # Inject our time tracking immediately after page load, before networkidle
+            self.page.evaluate(time_tracking_injection)
+
             self.page.wait_for_load_state("networkidle")
             time.sleep(2)  # Give bundle time to initialize
             
@@ -153,11 +185,31 @@ class BrowserThread:
                 });
             }
 
+            // Extract game time from available sources
+            let gameTime = 0;
+
+            // Method 1: Use our injected RAF-based time tracking (most reliable)
+            if (window._getRLGameTime) {
+                try {
+                    gameTime = window._getRLGameTime();
+                } catch (e) {}
+            }
+
+            // Method 2: Direct TimeKeeper access (if exposed - unlikely with webpack)
+            if (gameTime === 0 && window.TimeKeeper && window.TimeKeeper.accumulatedDeltaTime !== undefined) {
+                gameTime = window.TimeKeeper.accumulatedDeltaTime;
+            }
+
+            // Method 3: Check gameController.game.time (some versions)
+            if (gameTime === 0 && window.gameController && window.gameController.game && window.gameController.game.time !== undefined) {
+                gameTime = window.gameController.game.time;
+            }
+
             return {
                 aircraft: aircraft,
                 conflicts: conflicts,
                 score: window.gameController ? window.gameController.game.score : 0,
-                time: 0
+                time: gameTime
             };
         })();
         """
@@ -318,8 +370,9 @@ class OpenScopeEnv(gym.Env):
         if self.browser_thread is None:
             return {}
         state = self.browser_thread.call('get_state')
-        # Add our tracked time since window.TimeKeeper isn't accessible
-        if state:
+        # Use actual game time from JavaScript (extracted in browser thread)
+        # Fallback to simulated time only if game time is unavailable
+        if state and state.get('time', 0) == 0:
             state['time'] = self.simulated_time
         return state
 
@@ -434,7 +487,9 @@ class OpenScopeEnv(gym.Env):
         if self.browser_thread is None:
             self._init_browser()
 
-        # Reset game
+        # Reset game - clear all aircraft first, then set airport
+        self._execute_command("clear")  # Clear all aircraft
+        time.sleep(1)
         self._execute_command(f"airport {self.airport}")
         time.sleep(2)
         self._execute_command(f"timewarp {self.timewarp}")

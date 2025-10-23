@@ -12,8 +12,15 @@ This is a reinforcement learning training system for teaching AI agents to play 
 - Gymnasium with wrappers for normalization
 - Playwright for browser automation
 - wandb/Tensorboard for experiment tracking
+- Jupyter notebook support for interactive experimentation
 
 **Dependencies**: The parent directory must contain the openScope game server (Node.js). The game server must be running at http://localhost:3003 before training can begin.
+
+**Project Structure:**
+- **Main codebase**: Production-ready training system with SB3 integration
+- **POC directory** (`poc/`): Simplified proof-of-concept (30% less code) for experimentation
+- **Self-contained POC** (`poc-self-contained/`): Fully standalone version with embedded config
+- **Documentation**: Extensive .md files covering setup, architecture, and troubleshooting
 
 ## Development Setup
 
@@ -48,6 +55,14 @@ npm run start  # Must be running at localhost:3003
 ```bash
 # Verify SB3 integration works
 uv run test_sb3_integration.py
+
+# Test environment cleanup (browser/process management)
+uv run verify_cleanup.py
+
+# POC tests (simplified environment)
+uv run python poc/test_env.py
+uv run python poc/test_notebook_compat.py
+uv run python poc/test_jupyter_compat.py
 ```
 
 ### Training
@@ -137,6 +152,21 @@ uv run tensorboard --logdir logs/
 - `environment/wrappers.py`: Creates environment with Gymnasium wrappers
 - `utils/curriculum_callback.py`: SB3 callback for curriculum learning
 - `utils/curriculum.py`: Curriculum stage management
+
+**Scripts**:
+- `train_sb3.py`: Main training script with vectorized environments and callbacks
+- `evaluate_sb3.py`: Evaluation script for trained models
+- `test_sb3_integration.py`: Integration test for SB3 setup
+- `verify_cleanup.py`: Test browser/process cleanup
+
+**Configuration**:
+- `config/training_config.yaml`: Main training configuration (production)
+- `config/test_config.yaml`: Fast test configuration (quick iteration)
+- `pyproject.toml`: Python dependencies and project metadata
+
+**Notebooks**:
+- `openscope_rl_selfcontained.ipynb`: Self-contained demo notebook
+- `poc/openscope_rl_demo.ipynb`: POC demo notebook with simplified environment
 
 ### Key Architectural Decisions
 
@@ -275,6 +305,28 @@ This tests:
 
 Run this before full training to catch issues early.
 
+### Using Jupyter Notebooks
+
+The project includes Jupyter notebook support for interactive experimentation:
+
+```bash
+# Install Jupyter dependencies (included in pyproject.toml)
+uv sync
+
+# Launch Jupyter
+uv run jupyter notebook
+
+# Open the self-contained demo notebook
+# File: openscope_rl_selfcontained.ipynb
+# Or POC version: poc/openscope_rl_demo.ipynb
+```
+
+**Notebook compatibility notes:**
+- Uses `nest-asyncio` to handle event loop conflicts
+- Supports both headless and non-headless modes
+- Includes embedded configuration for easy experimentation
+- POC directory has a simplified environment (30% less code)
+
 ### Code Style
 
 - Uses Black formatter (run: `uv run black .`)
@@ -349,6 +401,60 @@ Command format examples:
 5. **Transformer masking**: Aircraft mask is True for valid, False for padding (opposite of attention mask)
 6. **Action space is Dict**: Not MultiDiscrete - each component is separate Discrete space
 7. **Observation normalization**: Wrappers compute running stats - observations will differ from raw env
+8. **Headless mode**: Set `headless: true` in config for WSL/remote servers without X display (see [docs/WSL_DISPLAY_FIX.md](docs/WSL_DISPLAY_FIX.md))
+9. **Jupyter event loops**: Use `nest-asyncio` to avoid Playwright event loop conflicts in notebooks
+10. **Browser threading**: Main environment uses dedicated thread for Playwright; POC uses simpler sync approach
+
+## POC and Experimentation
+
+The project includes two POC (proof-of-concept) directories for experimentation:
+
+### `poc/` - Simplified POC
+- **410 lines** (30% less than main environment)
+- Removes custom threading in favor of sync Playwright
+- Full type hints and better documentation
+- Same API as main codebase (drop-in replacement)
+- Includes Jupyter notebooks for interactive testing
+- Run: `uv run python poc/test_env.py`
+
+### `poc-self-contained/` - Fully Standalone
+- Completely self-contained with embedded configuration
+- No dependencies on parent directories
+- Ideal for quick experimentation and learning
+- Includes optimization guide
+
+**When to use POC**:
+- Learning the codebase
+- Rapid prototyping of new features
+- Testing environment changes without affecting production code
+- Jupyter notebook experimentation
+
+**When to use main codebase**:
+- Production training runs
+- Multi-environment vectorization
+- Full curriculum learning
+- wandb integration
+
+## Documentation Files
+
+The repository includes extensive documentation:
+
+**Setup and Configuration:**
+- [README.md](README.md) - Main project documentation
+- [docs/OPENSCOPE_SETUP_FINAL.md](docs/OPENSCOPE_SETUP_FINAL.md) - OpenScope game server setup
+- [docs/WSL_DISPLAY_FIX.md](docs/WSL_DISPLAY_FIX.md) - Fix for WSL display issues
+- [docs/HEADLESS_MODE_FIX.md](docs/HEADLESS_MODE_FIX.md) - Headless browser configuration
+
+**Architecture and Integration:**
+- [docs/OPENSCOPE_SOURCE_ANALYSIS.md](docs/OPENSCOPE_SOURCE_ANALYSIS.md) - Source code analysis
+- [docs/OPENSCOPE_GAP_ANALYSIS.md](docs/OPENSCOPE_GAP_ANALYSIS.md) - Analysis of missing features
+- [docs/GAP_ANALYSIS_SUPPLEMENTARY.md](docs/GAP_ANALYSIS_SUPPLEMENTARY.md) - Additional gap analysis
+
+Refer to these documents when:
+- Setting up the environment for the first time
+- Troubleshooting browser/display issues
+- Understanding game internals for environment modifications
+- Exploring advanced integration techniques
 
 ## Migration from Old System
 
@@ -360,3 +466,52 @@ If you have old code/checkpoints, see `SB3_MIGRATION_GUIDE.md` for:
 - Troubleshooting guide
 
 **TLDR**: Old `.pt` checkpoints are incompatible. Retrain with `train_sb3.py` for 4-8x speedup!
+
+## Development Workflow
+
+**Typical development cycle:**
+
+1. **Start game server** (in parent directory):
+   ```bash
+   cd ../openscope && npm start
+   ```
+
+2. **Test changes**:
+   ```bash
+   # Quick integration test
+   uv run test_sb3_integration.py
+
+   # Or test in POC environment
+   uv run python poc/test_env.py
+   ```
+
+3. **Fast iteration** with test config:
+   ```bash
+   uv run train_sb3.py --config config/test_config.yaml --n-envs 1
+   ```
+
+4. **Full training** once validated:
+   ```bash
+   uv run train_sb3.py --n-envs 4 --wandb
+   ```
+
+5. **Monitor** with TensorBoard:
+   ```bash
+   uv run tensorboard --logdir logs/
+   ```
+
+**Code quality tools:**
+```bash
+# Format code
+uv run black .
+
+# Lint code
+uv run ruff check .
+
+# Type checking (if needed)
+uv run mypy .
+```
+
+**Useful environment variables:**
+- `DISPLAY=:99` - Set for Xvfb virtual display (WSL/remote)
+- `PLAYWRIGHT_BROWSERS_PATH` - Custom browser installation path

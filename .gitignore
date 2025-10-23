@@ -63,3 +63,6 @@ dmypy.json
 # *.pt
 # *.pth
 # *.zip
+
+# Worktrees
+.trees/
