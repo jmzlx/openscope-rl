@@ -1,265 +1,205 @@
 """
-Neural Network architectures for OpenScope RL agent
-Uses Transformer-based architecture to handle variable numbers of aircraft
+Refactored neural network architectures for OpenScope RL agent.
+
+This module provides a clean, modular implementation of the ATCActorCritic network
+using separated concerns for encoders, heads, and configuration.
 """
 
+import logging
+from typing import Dict, Tuple, Optional
 
 import torch
 import torch.nn as nn
 
-
-class ATCTransformerEncoder(nn.Module):
-    """
-    Transformer encoder for processing variable number of aircraft
-    Uses self-attention to handle aircraft interactions
-    """
-
-    def __init__(
-        self, input_dim: int, hidden_dim: int, num_heads: int, num_layers: int, dropout: float = 0.1
-    ):
-        super().__init__()
-
-        self.input_projection = nn.Linear(input_dim, hidden_dim)
-
-        # Transformer encoder layers
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=hidden_dim,
-            nhead=num_heads,
-            dim_feedforward=hidden_dim * 4,
-            dropout=dropout,
-            activation="gelu",
-            batch_first=True,
-            norm_first=True,
-        )
-
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-
-        self.layer_norm = nn.LayerNorm(hidden_dim)
-
-    def forward(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: (batch, max_aircraft, input_dim)
-            mask: (batch, max_aircraft) - True for valid aircraft, False for padding
-
-        Returns:
-            encoded: (batch, max_aircraft, hidden_dim)
-        """
-        # Project to hidden dimension
-        x = self.input_projection(x)
-
-        # Create attention mask (True values are ignored)
-        # Transformer expects True for positions to be masked out
-        attn_mask = ~mask  # Invert: False for valid, True for padding
-
-        # Apply transformer
-        x = self.transformer(x, src_key_padding_mask=attn_mask)
-
-        x = self.layer_norm(x)
-
-        return x
+from .config import NetworkConfig, create_default_network_config, validate_network_config
+from .encoders import ATCTransformerEncoder, GlobalStateEncoder, AttentionPooling
+from .heads import ActorCriticHeads
 
 
-class AttentionPooling(nn.Module):
-    """Attention-based pooling to get fixed-size representation from variable aircraft"""
-
-    def __init__(self, hidden_dim: int, num_heads: int = 8):
-        super().__init__()
-        self.query = nn.Parameter(torch.randn(1, 1, hidden_dim))
-        self.attention = nn.MultiheadAttention(hidden_dim, num_heads=num_heads, batch_first=True)
-
-    def forward(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: (batch, max_aircraft, hidden_dim)
-            mask: (batch, max_aircraft)
-
-        Returns:
-            pooled: (batch, hidden_dim)
-        """
-        batch_size = x.size(0)
-        query = self.query.expand(batch_size, -1, -1)
-
-        # Attention mask
-        attn_mask = ~mask  # Invert for attention
-
-        # Apply attention
-        pooled, _ = self.attention(query, x, x, key_padding_mask=attn_mask)
-
-        return pooled.squeeze(1)
+logger = logging.getLogger(__name__)
 
 
 class ATCActorCritic(nn.Module):
     """
-    Combined actor-critic network for PPO with shared encoder
-
+    Combined actor-critic network for PPO with shared encoder.
+    
+    This network uses a transformer-based architecture to handle variable numbers
+    of aircraft and provides both policy and value estimates for actor-critic
+    reinforcement learning algorithms.
+    
     Architecture:
     - Shared transformer encoder for aircraft
     - Shared global state encoder
+    - Attention pooling for variable aircraft count
     - Separate policy and value heads
+    
+    Example:
+        >>> config = create_default_network_config(max_aircraft=10)
+        >>> model = ATCActorCritic(config)
+        >>> obs = {
+        ...     "aircraft": torch.randn(2, 10, 14),
+        ...     "aircraft_mask": torch.ones(2, 10, dtype=torch.bool),
+        ...     "global_state": torch.randn(2, 4),
+        ...     "conflict_matrix": torch.randn(2, 10, 10)
+        ... }
+        >>> action_logits, value = model(obs)
+        >>> print(action_logits["aircraft_id"].shape)  # torch.Size([2, 11])
+        >>> print(value.shape)  # torch.Size([2, 1])
     """
-
-    def __init__(
-        self,
-        aircraft_feature_dim: int = 32,
-        global_feature_dim: int = 16,
-        hidden_dim: int = 256,
-        num_heads: int = 8,
-        num_layers: int = 4,
-        max_aircraft: int = 20,
-        action_space_sizes: dict[str, int] = None,
-    ):
+    
+    def __init__(self, config: Optional[NetworkConfig] = None):
+        """
+        Initialize ATCActorCritic network.
+        
+        Args:
+            config: Network configuration (uses default if None)
+            
+        Raises:
+            ValueError: If configuration is invalid
+        """
         super().__init__()
-
-        self.max_aircraft = max_aircraft
-        self.hidden_dim = hidden_dim
-
-        if action_space_sizes is None:
-            action_space_sizes = {
-                "aircraft_id": max_aircraft + 1,
-                "command_type": 5,
-                "altitude": 18,
-                "heading": 13,
-                "speed": 8,
-            }
-        self.action_space_sizes = action_space_sizes
-
-        # Shared encoders
-        self.aircraft_encoder = ATCTransformerEncoder(
-            input_dim=aircraft_feature_dim,
-            hidden_dim=hidden_dim,
-            num_heads=num_heads,
-            num_layers=num_layers,
+        
+        # Use default config if none provided
+        if config is None:
+            config = create_default_network_config()
+        
+        # Validate configuration
+        validate_network_config(config)
+        
+        self.config = config
+        self.max_aircraft = config.max_aircraft
+        self.aircraft_feature_dim = config.aircraft_feature_dim
+        self.global_feature_dim = config.global_feature_dim
+        
+        # Initialize encoders
+        self.aircraft_encoder = ATCTransformerEncoder(config.encoder_config)
+        self.global_encoder = GlobalStateEncoder(
+            input_dim=self.global_feature_dim,
+            hidden_dim=config.encoder_config.hidden_dim,
+            num_layers=2,
+            dropout=config.encoder_config.dropout,
+            activation=config.encoder_config.activation.value
         )
-
-        self.global_encoder = nn.Sequential(
-            nn.Linear(global_feature_dim, 128), nn.ReLU(), nn.Linear(128, 128), nn.ReLU()
-        )
-
-        self.attention_pooling = AttentionPooling(hidden_dim, num_heads)
-
+        
+        # Attention pooling
+        self.attention_pooling = AttentionPooling(config.attention_pooling_config)
+        
         # Combined feature dimension
-        combined_dim = hidden_dim + 128
-
+        combined_dim = config.encoder_config.hidden_dim + config.encoder_config.hidden_dim
+        
         # Shared feature layers
         self.shared_layers = nn.Sequential(
-            nn.Linear(combined_dim, hidden_dim),
+            nn.Linear(combined_dim, config.encoder_config.hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
+            nn.Linear(config.encoder_config.hidden_dim, config.encoder_config.hidden_dim),
             nn.ReLU(),
         )
-
-        # Policy head - aircraft selection via attention
-        self.aircraft_attention = nn.Linear(hidden_dim, hidden_dim)
-        self.aircraft_key = nn.Linear(hidden_dim, hidden_dim)
-
-        # Policy head - command type and parameters
-        self.command_head = nn.Linear(hidden_dim, action_space_sizes["command_type"])
-        self.altitude_head = nn.Linear(hidden_dim, action_space_sizes["altitude"])
-        self.heading_head = nn.Linear(hidden_dim, action_space_sizes["heading"])
-        self.speed_head = nn.Linear(hidden_dim, action_space_sizes["speed"])
-
-        # Value head
-        self.value_head = nn.Sequential(nn.Linear(hidden_dim, 128), nn.ReLU(), nn.Linear(128, 1))
-
-    def _encode_state(self, obs: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
+        
+        # Actor-critic heads
+        self.heads = ActorCriticHeads(config.policy_head_config, config.value_head_config)
+        
+        # Initialize weights
+        self._init_weights()
+        
+        logger.info(f"ATCActorCritic initialized: {self.max_aircraft} aircraft, "
+                   f"{config.encoder_config.hidden_dim} hidden dim")
+    
+    def _init_weights(self) -> None:
+        """Initialize network weights."""
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                if self.config.init_method == "xavier_uniform":
+                    nn.init.xavier_uniform_(module.weight, gain=self.config.init_gain)
+                elif self.config.init_method == "xavier_normal":
+                    nn.init.xavier_normal_(module.weight, gain=self.config.init_gain)
+                elif self.config.init_method == "kaiming_uniform":
+                    nn.init.kaiming_uniform_(module.weight)
+                elif self.config.init_method == "kaiming_normal":
+                    nn.init.kaiming_normal_(module.weight)
+                else:
+                    raise ValueError(f"Unknown init method: {self.config.init_method}")
+                
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+    
+    def _encode_state(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Encode observation through shared encoder
-
+        Encode observation through shared encoder.
+        
+        Args:
+            obs: Observation dictionary containing aircraft, aircraft_mask, global_state
+            
         Returns:
-            shared_features: (batch, hidden_dim) - for policy/value heads
-            aircraft_encoded: (batch, max_aircraft, hidden_dim) - for aircraft selection
+            Tuple of (shared_features, aircraft_encoded)
         """
         aircraft = obs["aircraft"]
         aircraft_mask = obs["aircraft_mask"]
         global_state = obs["global_state"]
-
-        # Encode through shared layers
+        
+        # Encode aircraft through transformer
         aircraft_encoded = self.aircraft_encoder(aircraft, aircraft_mask)
+        
+        # Encode global state
         global_encoded = self.global_encoder(global_state)
-
-        # Pool aircraft features
+        
+        # Pool aircraft features using attention
         aircraft_pooled = self.attention_pooling(aircraft_encoded, aircraft_mask)
-
+        
         # Combine features
         combined = torch.cat([aircraft_pooled, global_encoded], dim=-1)
         shared_features = self.shared_layers(combined)
-
+        
         return shared_features, aircraft_encoded
-
-    def forward(self, obs: dict[str, torch.Tensor]) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+    
+    def forward(self, obs: Dict[str, torch.Tensor]) -> Tuple[Dict[str, torch.Tensor], torch.Tensor]:
         """
-        Forward pass through both policy and value networks
-
+        Forward pass through both policy and value networks.
+        
+        Args:
+            obs: Observation dictionary containing:
+                - aircraft: (batch_size, max_aircraft, aircraft_feature_dim)
+                - aircraft_mask: (batch_size, max_aircraft)
+                - global_state: (batch_size, global_feature_dim)
+                - conflict_matrix: (batch_size, max_aircraft, max_aircraft) [unused]
+        
         Returns:
-            action_logits: Dictionary of logits for each action component
-            value: State value estimate
+            Tuple of (action_logits, value)
         """
+        # Validate input
+        self._validate_observation(obs)
+        
+        # Encode state
         shared_features, aircraft_encoded = self._encode_state(obs)
-        aircraft_mask = obs["aircraft_mask"]
-        batch_size = aircraft_mask.size(0)
-
-        # Policy - aircraft selection via attention
-        query = self.aircraft_attention(shared_features).unsqueeze(1)  # (batch, 1, hidden)
-        keys = self.aircraft_key(aircraft_encoded)  # (batch, max_aircraft, hidden)
-
-        # Attention scores for aircraft selection
-        aircraft_logits = torch.bmm(query, keys.transpose(1, 2)).squeeze(1)  # (batch, max_aircraft)
-
-        # Add "no action" option
-        no_action_logit = torch.zeros(batch_size, 1, device=aircraft_logits.device)
-        aircraft_logits = torch.cat([aircraft_logits, no_action_logit], dim=1)
-
-        # Mask out invalid aircraft
-        mask_expanded = torch.cat(
-            [
-                aircraft_mask,
-                torch.ones(batch_size, 1, dtype=torch.bool, device=aircraft_mask.device),
-            ],
-            dim=1,
-        )
-        aircraft_logits = aircraft_logits.masked_fill(~mask_expanded, float("-inf"))
-
-        # Policy - command type and parameters
-        command_logits = self.command_head(shared_features)
-        altitude_logits = self.altitude_head(shared_features)
-        heading_logits = self.heading_head(shared_features)
-        speed_logits = self.speed_head(shared_features)
-
-        action_logits = {
-            "aircraft_id": aircraft_logits,
-            "command_type": command_logits,
-            "altitude": altitude_logits,
-            "heading": heading_logits,
-            "speed": speed_logits,
-        }
-
-        # Value
-        value = self.value_head(shared_features)
-
+        
+        # Get action logits and value
+        action_logits, value = self.heads(shared_features, aircraft_encoded, obs["aircraft_mask"])
+        
         return action_logits, value
-
+    
     def get_action_and_value(
-        self, obs: dict[str, torch.Tensor], action: dict[str, torch.Tensor] = None
-    ) -> tuple[dict[str, torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, 
+        obs: Dict[str, torch.Tensor], 
+        action: Optional[Dict[str, torch.Tensor]] = None
+    ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Sample action or compute log prob of given action
-
+        Sample action or compute log prob of given action.
+        
+        Args:
+            obs: Observation dictionary
+            action: Optional action dictionary for computing log probabilities
+            
         Returns:
-            action: Sampled action (or input action)
-            log_prob: Log probability of action
-            entropy: Entropy of policy
-            value: State value
+            Tuple of (action, log_prob, entropy, value)
         """
         logits, value = self(obs)
-
+        
         # Create distributions for each action component
         aircraft_dist = torch.distributions.Categorical(logits=logits["aircraft_id"])
         command_dist = torch.distributions.Categorical(logits=logits["command_type"])
         altitude_dist = torch.distributions.Categorical(logits=logits["altitude"])
         heading_dist = torch.distributions.Categorical(logits=logits["heading"])
         speed_dist = torch.distributions.Categorical(logits=logits["speed"])
-
+        
         # Sample or use provided action
         if action is None:
             action = {
@@ -269,23 +209,110 @@ class ATCActorCritic(nn.Module):
                 "heading": heading_dist.sample(),
                 "speed": speed_dist.sample(),
             }
-
+        
         # Compute log probabilities
         log_prob = (
-            aircraft_dist.log_prob(action["aircraft_id"])
-            + command_dist.log_prob(action["command_type"])
-            + altitude_dist.log_prob(action["altitude"])
-            + heading_dist.log_prob(action["heading"])
-            + speed_dist.log_prob(action["speed"])
+            aircraft_dist.log_prob(action["aircraft_id"]) +
+            command_dist.log_prob(action["command_type"]) +
+            altitude_dist.log_prob(action["altitude"]) +
+            heading_dist.log_prob(action["heading"]) +
+            speed_dist.log_prob(action["speed"])
         )
-
+        
         # Compute entropy
         entropy = (
-            aircraft_dist.entropy()
-            + command_dist.entropy()
-            + altitude_dist.entropy()
-            + heading_dist.entropy()
-            + speed_dist.entropy()
+            aircraft_dist.entropy() +
+            command_dist.entropy() +
+            altitude_dist.entropy() +
+            heading_dist.entropy() +
+            speed_dist.entropy()
         )
-
+        
         return action, log_prob, entropy, value.squeeze(-1)
+    
+    def _validate_observation(self, obs: Dict[str, torch.Tensor]) -> None:
+        """
+        Validate observation structure and shapes.
+        
+        Args:
+            obs: Observation dictionary
+            
+        Raises:
+            ValueError: If observation is invalid
+        """
+        required_keys = ["aircraft", "aircraft_mask", "global_state"]
+        
+        for key in required_keys:
+            if key not in obs:
+                raise ValueError(f"Missing observation key: {key}")
+        
+        # Validate shapes
+        batch_size = obs["aircraft"].size(0)
+        
+        expected_shapes = {
+            "aircraft": (batch_size, self.max_aircraft, self.aircraft_feature_dim),
+            "aircraft_mask": (batch_size, self.max_aircraft),
+            "global_state": (batch_size, self.global_feature_dim),
+        }
+        
+        for key, expected_shape in expected_shapes.items():
+            if obs[key].shape != expected_shape:
+                raise ValueError(f"Invalid shape for {key}: expected {expected_shape}, "
+                               f"got {obs[key].shape}")
+    
+    def get_action_space_sizes(self) -> Dict[str, int]:
+        """Get action space sizes."""
+        return self.heads.get_action_space_sizes()
+    
+    def get_model_info(self) -> Dict[str, any]:
+        """Get model architecture information."""
+        from .config import get_model_info
+        return get_model_info(self.config)
+    
+    def count_parameters(self) -> Dict[str, int]:
+        """
+        Count model parameters.
+        
+        Returns:
+            Dictionary with parameter counts
+        """
+        total_params = sum(p.numel() for p in self.parameters())
+        trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        
+        return {
+            "total_parameters": total_params,
+            "trainable_parameters": trainable_params,
+            "non_trainable_parameters": total_params - trainable_params,
+        }
+
+
+# Backward compatibility aliases
+ATCTransformerEncoder = ATCTransformerEncoder  # Already imported from encoders
+AttentionPooling = AttentionPooling  # Already imported from encoders
+
+
+def create_model(config: Optional[NetworkConfig] = None) -> ATCActorCritic:
+    """
+    Create ATCActorCritic model with given configuration.
+    
+    Args:
+        config: Network configuration (uses default if None)
+        
+    Returns:
+        ATCActorCritic model instance
+    """
+    return ATCActorCritic(config)
+
+
+def create_default_model(**overrides) -> ATCActorCritic:
+    """
+    Create ATCActorCritic model with default configuration and optional overrides.
+    
+    Args:
+        **overrides: Configuration values to override
+        
+    Returns:
+        ATCActorCritic model instance
+    """
+    config = create_default_network_config(**overrides)
+    return ATCActorCritic(config)
