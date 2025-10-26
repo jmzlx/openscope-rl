@@ -18,6 +18,13 @@ from .config import (
 )
 from .encoders import ATCTransformerEncoder, GlobalStateEncoder, AttentionPooling
 from .heads import PolicyHead, ValueHead, ActorCriticHeads
+from .hierarchical_policy import (
+    HierarchicalPolicy,
+    HierarchicalPolicyConfig,
+    HighLevelPolicyConfig,
+    LowLevelPolicyConfig,
+    create_hierarchical_policy,
+)
 
 # Public API
 __all__ = [
@@ -25,22 +32,29 @@ __all__ = [
     "ATCActorCritic",
     "create_model",
     "create_default_model",
-    
+
+    # Hierarchical model
+    "HierarchicalPolicy",
+    "HierarchicalPolicyConfig",
+    "HighLevelPolicyConfig",
+    "LowLevelPolicyConfig",
+    "create_hierarchical_policy",
+
     # Configuration
     "NetworkConfig",
     "EncoderConfig",
-    "AttentionPoolingConfig", 
+    "AttentionPoolingConfig",
     "PolicyHeadConfig",
     "ValueHeadConfig",
     "create_default_network_config",
     "validate_network_config",
     "get_model_info",
-    
+
     # Encoders
     "ATCTransformerEncoder",
     "GlobalStateEncoder",
     "AttentionPooling",
-    
+
     # Heads
     "PolicyHead",
     "ValueHead",
