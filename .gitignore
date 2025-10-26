@@ -66,3 +66,21 @@ dmypy.json
 
 # Worktrees
 .trees/
+
+# Training artifacts (expanded)
+models/
+wandb/
+*.pkl
+*.ckpt
+*.h5
+*.safetensors
+
+# Recorded episodes
+recordings/
+episodes/
+*.mp4
+*.avi
+
+# Cosmos artifacts
+cosmos_data/
+cosmos_models/
