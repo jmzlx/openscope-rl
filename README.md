@@ -2,6 +2,18 @@
 
 A demonstration environment for exploring air traffic control using the OpenScope ATC simulator.
 
+## Trajectory Transformer Implementation
+
+This branch implements a **Trajectory Transformer** (TT) - a unified model that learns to predict complete trajectories autoregressively, modeling the sequence: s₀, a₀, r₀, s₁, a₁, r₁, ...
+
+### Key Features
+
+- **Unified Autoregressive Model**: Single transformer predicts states, actions, and rewards
+- **Multi-Task Learning**: Joint training on all three prediction tasks with weighted losses
+- **World Model Capability**: Can simulate future trajectories for planning
+- **Beam Search Planning**: N-step lookahead using the learned world model
+- **Flexible Architecture**: Configurable transformer layers, attention heads, and context length
+
 ## 🚀 Quick Start
 
 Explore OpenScope interactively:
@@ -36,7 +48,13 @@ openscope-rl/
 │   ├── networks.py            # Main ATCActorCritic model
 │   ├── config.py             # Network configuration
 │   ├── encoders.py           # Transformer encoders
-│   └── heads.py              # Policy and value heads
+│   ├── heads.py              # Policy and value heads
+│   └── trajectory_transformer.py  # Trajectory Transformer model
+├── training/                  # Training utilities
+│   ├── tt_trainer.py          # Trajectory Transformer trainer
+│   └── tt_planner.py          # Beam search planner
+├── notebooks/                 # Interactive demos
+│   └── 06_trajectory_transformer_demo.ipynb  # TT demo
 ├── poc/                      # Proof of concept demos (self-contained)
 │   ├── atc_rl/               # POC ATC environments
 │   │   ├── environment_2d.py # Simple 2D ATC environment

@@ -18,6 +18,11 @@ from .config import (
 )
 from .encoders import ATCTransformerEncoder, GlobalStateEncoder, AttentionPooling
 from .heads import PolicyHead, ValueHead, ActorCriticHeads
+from .trajectory_transformer import (
+    TrajectoryTransformer,
+    TrajectoryTransformerConfig,
+    create_trajectory_transformer,
+)
 
 # Public API
 __all__ = [
@@ -25,26 +30,31 @@ __all__ = [
     "ATCActorCritic",
     "create_model",
     "create_default_model",
-    
+
     # Configuration
     "NetworkConfig",
     "EncoderConfig",
-    "AttentionPoolingConfig", 
+    "AttentionPoolingConfig",
     "PolicyHeadConfig",
     "ValueHeadConfig",
     "create_default_network_config",
     "validate_network_config",
     "get_model_info",
-    
+
     # Encoders
     "ATCTransformerEncoder",
     "GlobalStateEncoder",
     "AttentionPooling",
-    
+
     # Heads
     "PolicyHead",
     "ValueHead",
     "ActorCriticHeads",
+
+    # Trajectory Transformer
+    "TrajectoryTransformer",
+    "TrajectoryTransformerConfig",
+    "create_trajectory_transformer",
 ]
 
 # Version info
