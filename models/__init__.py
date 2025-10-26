@@ -18,6 +18,14 @@ from .config import (
 )
 from .encoders import ATCTransformerEncoder, GlobalStateEncoder, AttentionPooling
 from .heads import PolicyHead, ValueHead, ActorCriticHeads
+from .multi_agent_policy import (
+    MultiAgentPolicy,
+    CommunicationModule,
+    DecentralizedActor,
+    CentralizedCritic,
+    create_multi_agent_policy,
+    create_default_multi_agent_policy,
+)
 
 # Public API
 __all__ = [
@@ -25,22 +33,30 @@ __all__ = [
     "ATCActorCritic",
     "create_model",
     "create_default_model",
-    
+
+    # Multi-agent models
+    "MultiAgentPolicy",
+    "CommunicationModule",
+    "DecentralizedActor",
+    "CentralizedCritic",
+    "create_multi_agent_policy",
+    "create_default_multi_agent_policy",
+
     # Configuration
     "NetworkConfig",
     "EncoderConfig",
-    "AttentionPoolingConfig", 
+    "AttentionPoolingConfig",
     "PolicyHeadConfig",
     "ValueHeadConfig",
     "create_default_network_config",
     "validate_network_config",
     "get_model_info",
-    
+
     # Encoders
     "ATCTransformerEncoder",
     "GlobalStateEncoder",
     "AttentionPooling",
-    
+
     # Heads
     "PolicyHead",
     "ValueHead",
