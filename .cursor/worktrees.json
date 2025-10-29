@@ -1,0 +1,7 @@
+{
+  "setup-worktree": [
+    "uv venv",
+    "uv sync",
+    "cp $ROOT_WORKTREE_PATH/.env .env"
+  ]
+}
