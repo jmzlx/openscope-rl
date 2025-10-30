@@ -151,7 +151,11 @@ class OpenScopeInterface:
         elif command_type == CommandType.HEADING:
             hdg_change = self.config.action_config.heading_changes[action["heading"]]
             current_heading = aircraft.get("heading", 0)
-            new_hdg = int((current_heading + hdg_change) % 360)
+            # Round current heading to avoid float artifacts, wrap to [0, 360),
+            # and map 0 to 360 to satisfy OpenScope's 001-360 requirement
+            new_hdg = int((int(round(current_heading)) + hdg_change) % 360)
+            if new_hdg == 0:
+                new_hdg = 360
             return f"{callsign} fh {new_hdg:03d}"
 
         elif command_type == CommandType.SPEED:
