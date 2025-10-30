@@ -29,6 +29,7 @@ dependencies = [
     "gymnasium>=0.29.0",
     # Reinforcement Learning
     "stable-baselines3[extra]>=2.0.0", # PPO + extras (tensorboard, rich, etc.)
+    "sb3-contrib>=2.0.0", # For ActionMasker and other wrappers
     # Game interface
     "playwright>=1.40.0",
     # Experiment Tracking

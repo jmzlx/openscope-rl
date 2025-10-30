@@ -1,0 +1,465 @@
+{
+  "aircraft_properties": [
+    "_calculateArrivalRunwayModelGlideslopeAltitude",
+    "_calculateCrabHeadingForGroundTrack",
+    "_calculateGroundTrackForHeading",
+    "_calculateLegalSpeed",
+    "_calculateTargetedAltitude",
+    "_calculateTargetedAltitudeDuringLanding",
+    "_calculateTargetedAltitudeToInterceptGlidepath",
+    "_calculateTargetedAltitudeVnav",
+    "_calculateTargetedAltitudeVnavClimb",
+    "_calculateTargetedAltitudeVnavDescent",
+    "_calculateTargetedGroundTrackDuringLanding",
+    "_calculateTargetedGroundTrackLnav",
+    "_calculateTargetedHeadingHold",
+    "_calculateTargetedHeadingToInterceptCourse",
+    "_calculateTargetedSpeed",
+    "_calculateTargetedSpeedDuringLanding",
+    "_calculateTargetedSpeedVnav",
+    "_calculateTargetedSpeedVnavAcceleration",
+    "_calculateTargetedSpeedVnavDeceleration",
+    "_contactAircraftAfterControllabilityChange",
+    "_findFirstWaypoint",
+    "_isEstablishedOnHoldingPattern",
+    "_prepareMcpForTakeoff",
+    "_targetGroundTrack",
+    "_targetHeading",
+    "_updateAircraftControllability",
+    "_updateTargetedDirectionality",
+    "addConflict",
+    "airlineCallsign",
+    "airlineId",
+    "altitude",
+    "buildCurrentTerrainRanges",
+    "buildRestrictedAreaLinks",
+    "callUp",
+    "callsign",
+    "cancelFix",
+    "cancelLanding",
+    "category",
+    "conflicts",
+    "constructor",
+    "decreaseAircraftAltitude",
+    "destination",
+    "distance",
+    "distanceToAircraft",
+    "flightNumber",
+    "flightPhase",
+    "fms",
+    "getAlerts",
+    "getCallsign",
+    "getClimbRate",
+    "getRadioCallsign",
+    "getViewModel",
+    "getWindComponents",
+    "groundSpeed",
+    "groundTrack",
+    "hasConflictWithAircraftModel",
+    "heading",
+    "history",
+    "hit",
+    "id",
+    "increaseAircraftAltitude",
+    "isAboveGlidepath",
+    "isAirborne",
+    "isApron",
+    "isArrival",
+    "isBeyondDecelerationPointForWaypointModel",
+    "isBeyondTopOfDescentForWaypointModel",
+    "isControllable",
+    "isDeparture",
+    "isEstablishedOnCourse",
+    "isEstablishedOnGlidepath",
+    "isInsideAirspace",
+    "isOnFinal",
+    "isOnGround",
+    "isOverflight",
+    "isRemovable",
+    "isStalling",
+    "isStopped",
+    "isTakeoff",
+    "isTaxiing",
+    "isVisible",
+    "matchCallsign",
+    "mcp",
+    "model",
+    "moveToRunway",
+    "origin",
+    "overrideTarget",
+    "parse",
+    "pilot",
+    "pilotVoice",
+    "positionModel",
+    "projected",
+    "radial",
+    "radioCall",
+    "relativePosition",
+    "relativePositionHistory",
+    "removeConflict",
+    "restricted",
+    "rules",
+    "setFlightPhase",
+    "setIsRemovable",
+    "shouldTakeOffWhenRunwayIsClear",
+    "speed",
+    "takeoff",
+    "takeoffTime",
+    "target",
+    "targetGroundTrack",
+    "targetHeading",
+    "taxiToRunway",
+    "taxi_start",
+    "taxi_time",
+    "terrain_ranges",
+    "transponderCode",
+    "trend",
+    "trueAirspeed",
+    "update",
+    "updateAircraftTurnPhysics",
+    "updateAltitudePhysics",
+    "updateFlightPhase",
+    "updateGroundSpeedPhysics",
+    "updatePhysics",
+    "updateSpeedPhysics",
+    "updateTarget",
+    "updateWarning",
+    "validateNextAltitude",
+    "validateNextSpeed",
+    "warning"
+  ],
+  "total_properties": 127,
+  "sample_aircraft_data": {
+    "id": "aircraft-1245",
+    "positionModel": {
+      "_id": "position-model-429",
+      "latitude": 47.125843628730316,
+      "longitude": -121.62773372225777,
+      "elevation": 0,
+      "_referencePosition": {
+        "_id": "position-model-76",
+        "latitude": 47.44983333333333,
+        "longitude": -122.31183333333334,
+        "elevation": 432,
+        "_referencePosition": null,
+        "_magneticNorth": 0.2792526803190927,
+        "_relativePosition": [
+          0,
+          0
+        ]
+      },
+      "_magneticNorth": 0.2792526803190927
+    },
+    "model": {
+      "_id": "BaseModel-1178",
+      "name": "Bombardier Dash 8 Q400",
+      "icao": "DH8D",
+      "icaoWithWeightClass": "DH8D/L",
+      "engines": {
+        "number": 2,
+        "type": "T"
+      },
+      "weightClass": "M",
+      "category": {
+        "srs": 3,
+        "lahso": 6,
+        "recat": "D"
+      },
+      "ceiling": 27000,
+      "rate": {
+        "climb": 3500,
+        "descent": 1500,
+        "accelerate": 10,
+        "decelerate": 6
+      },
+      "runway": {
+        "takeoff": 1.22,
+        "landing": 1.293
+      },
+      "speed": {
+        "min": 100,
+        "landing": 130,
+        "cruise": 340,
+        "cruiseM": null,
+        "max": 360,
+        "maxM": null
+      },
+      "capability": {
+        "ils": true,
+        "fix": true
+      }
+    },
+    "airlineId": "qxe",
+    "airlineCallsign": "Horizon",
+    "flightNumber": "5732",
+    "shouldTakeOffWhenRunwayIsClear": false,
+    "transponderCode": "3770",
+    "pilotVoice": {
+      "voice": "Daniel",
+      "pitch": "0.9",
+      "rate": "1.064"
+    },
+    "heading": 5.007187090833035,
+    "altitude": 15000,
+    "speed": 320,
+    "groundSpeed": 405.36264982085277,
+    "groundTrack": -1.2564032703061032,
+    "takeoffTime": 0,
+    "trueAirspeed": 396.8,
+    "radial": 1.9025046603061935,
+    "distance": 62.800844475566656,
+    "origin": "",
+    "destination": "ksea",
+    "trend": 0,
+    "history": [],
+    "restricted": {
+      "list": [
+        {
+          "data": {
+            "name": "P-51",
+            "height": 2500,
+            "poly": [
+              [
+                -43.11904124814836,
+                25.10090137225592
+              ],
+              [
+                -41.413106437960806,
+                19.251498712809322
+              ],
+              [
+                -38.29768731315949,
+                17.082215615558084
+              ],
+              [
+                -35.08782420239646,
+                18.096847169335806
+              ],
+              [
+                -37.57224439689508,
+                26.538472942165914
+              ]
+            ],
+            "labelRelativePositions": [
+              [
+                -39.10343272527241,
+                21.810344278861997
+              ]
+            ]
+          },
+          "range": null,
+          "inside": false
+        },
+        {
+          "data": {
+            "name": "R-6701",
+            "height": 5000,
+            "poly": [
+              [
+                -41.44580602377324,
+                71.00390075153254
+              ],
+              [
+                -35.29934752820611,
+                64.57265131888151
+              ],
+              [
+                -47.16355407438881,
+                61.84542161625193
+              ],
+              [
+                -48.8345217175805,
+                68.88522061964962
+              ]
+            ],
+            "labelRelativePositions": [
+              [
+                -42.06693462289331,
+                66.42466118389224
+              ]
+            ]
+          },
+          "range": null,
+          "inside": false
+        },
+        {
+          "data": {
+            "name": "R-6703",
+            "height": 14000,
+            "poly": [
+              [
+                -15.64238415776629,
+                -47.863406793218815
+              ],
+              [
+                -15.024207467208477,
+                -50.57371011536328
+              ],
+              [
+                -15.04169595400439,
+                -65.774863750149
+              ],
+              [
+                -13.440304934558933,
+                -66.94721311338431
+              ],
+              [
+                -11.008143564594064,
+                -65.72100070777161
+              ],
+              [
+                -8.320181675587685,
+                -57.62328626366417
+              ],
+              [
+                -8.534437685289712,
+                -47.57541411443025
+              ],
+              [
+                -12.243984708160946,
+                -46.60125673928651
+              ]
+            ],
+            "labelRelativePositions": [
+              [
+                -11.981282916676989,
+                -56.77423492633541
+              ]
+            ]
+          },
+          "range": null,
+          "inside": false
+        },
+        {
+          "data": {
+            "name": "R-6703",
+            "height": 5000,
+            "poly": [
+              [
+                -8.534437685289712,
+                -47.57541411443025
+              ],
+              [
+                -8.320181675587685,
+                -57.62328626366417
+              ],
+              [
+                -6.712730319694652,
+                -54.01562224718672
+              ],
+              [
+                -5.918451697374021,
+                -53.625214466268474
+              ],
+              [
+                -4.592594860357642,
+                -52.74376067335357
+              ],
+              [
+                -4.234124436517916,
+                -52.43121560730128
+              ],
+              [
+                -4.0813872984375585,
+                -52.037117247994566
+              ],
+              [
+                -4.029053314533311,
+                -51.70228966099205
+              ],
+              [
+                -3.0167771455308867,
+                -51.226884671272614
+              ],
+              [
+                -2.6646489939869626,
+                -51.11501686758863
+              ],
+              [
+                -2.4113820199576974,
+                -50.78845016590184
+              ],
+              [
+                -2.7750380708893614,
+                -49.49038647660875
+              ],
+              [
+                -3.431383251476742,
+                -48.917951195051984
+              ]
+            ],
+            "labelRelativePositions": [
+              [
+                -5.4729098526237046,
+                -52.599350189047215
+              ]
+            ]
+          },
+          "range": null,
+          "inside": false
+        }
+      ]
+    },
+    "warning": null,
+    "hit": false,
+    "taxi_start": 0,
+    "taxi_time": 3,
+    "rules": "ifr",
+    "isControllable": false,
+    "conflicts": {},
+    "terrain_ranges": false,
+    "_isEstablishedOnHoldingPattern": false,
+    "isRemovable": false,
+    "projected": false,
+    "relativePositionHistory": [
+      [
+        61.32113840381688,
+        -21.091102304532026,
+        0
+      ],
+      [
+        60.53311803306273,
+        -20.83124100843486,
+        4.003000020980835
+      ],
+      [
+        59.74260469687901,
+        -20.57156192993014,
+        8.010999917984009
+      ]
+    ],
+    "category": "arrival",
+    "target": {
+      "altitude": 15000,
+      "heading": null,
+      "turn": null,
+      "speed": 320
+    },
+    "_targetHeading": null,
+    "_targetGroundTrack": 5.026782036873483,
+    "mcp": {
+      "isEnabled": true,
+      "altitudeMode": "VNAV",
+      "autopilotMode": "ON",
+      "headingMode": "LNAV",
+      "speedMode": "VNAV",
+      "altitude": 12000,
+      "course": -1,
+      "heading": 5.028252360551294,
+      "speed": 320,
+      "shouldExpediteAltitudeChange": false,
+      "nav1Datum": null,
+      "descentAngle": 0
+    },
+    "fms": "[Non-serializable Object]",
+    "pilot": "[Non-serializable Object]",
+    "targetHeading": 5.007187090833035,
+    "targetGroundTrack": 5.026782036873483,
+    "callsign": "QXE5732",
+    "flightPhase": "CRUISE",
+    "relativePosition": [
+      59.377406518359486,
+      -20.451642036711657
+    ]
+  }
+}

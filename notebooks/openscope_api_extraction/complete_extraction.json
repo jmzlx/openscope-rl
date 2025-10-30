@@ -1,0 +1,2078 @@
+{
+  "aircraftCount": 24,
+  "sampleAircraftProperties": {
+    "id": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "aircraft-1245"
+    },
+    "positionModel": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "{\"_id\":\"position-model-429\",\"latitude\":47.125843628730316,\"longitude\":-121.62773372225777,\"elevation\":0,\"_referencePosition\":{\"_id\":\"position-model-76\",\"latitude\":47.44983333333333,\"longitude\":-122.31183333333334,\"elevation\":432,\"_referencePosition\":null,\"_magneticNorth\":0.2792526803190927,\"_relativePosition\":[0,0]},\"_magneticNorth\":0.2792526803190927}"
+    },
+    "model": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "{\"_id\":\"BaseModel-1178\",\"name\":\"Bombardier Dash 8 Q400\",\"icao\":\"DH8D\",\"icaoWithWeightClass\":\"DH8D/L\",\"engines\":{\"number\":2,\"type\":\"T\"},\"weightClass\":\"M\",\"category\":{\"srs\":3,\"lahso\":6,\"recat\":\"D\"},\"ceiling\":27000,\"rate\":{\"climb\":3500,\"descent\":1500,\"accelerate\":10,\"decelerate\":6},\"runway\":{\"takeoff\":1.22,\"landing\":1.293},\"speed\":{\"min\":100,\"landing\":130,\"cruise\":340,\"cruiseM\":null,\"max\":360,\"maxM\":null},\"capability\":{\"ils\":true,\"fix\":true}}"
+    },
+    "airlineId": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "qxe"
+    },
+    "airlineCallsign": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "Horizon"
+    },
+    "flightNumber": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "5732"
+    },
+    "shouldTakeOffWhenRunwayIsClear": {
+      "exists": true,
+      "type": "boolean",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": false
+    },
+    "transponderCode": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "3770"
+    },
+    "pilotVoice": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "{\"voice\":\"Daniel\",\"pitch\":\"0.9\",\"rate\":\"1.064\"}"
+    },
+    "heading": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 5.007187090833035
+    },
+    "altitude": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 15000
+    },
+    "speed": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 320
+    },
+    "groundSpeed": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 405.36264982085277
+    },
+    "groundTrack": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": -1.2564032703061032
+    },
+    "takeoffTime": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 0
+    },
+    "trueAirspeed": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 396.8
+    },
+    "radial": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 1.9025046603061935
+    },
+    "distance": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 62.800844475566656
+    },
+    "origin": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": ""
+    },
+    "destination": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "ksea"
+    },
+    "trend": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 0
+    },
+    "history": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": true,
+      "value": []
+    },
+    "restricted": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "{\"list\":[{\"data\":{\"name\":\"P-51\",\"height\":2500,\"poly\":[[-43.11904124814836,25.10090137225592],[-41.413106437960806,19.251498712809322],[-38.29768731315949,17.082215615558084],[-35.08782420239646,18.096847169335806],[-37.57224439689508,26.538472942165914]],\"labelRelativePositions\":[[-39.10343272527241,21.810344278861997]]},\"range\":null,\"inside\":false},{\"data\":{\"name\":\"R-6701\",\"height\":5000,\"poly\":[[-41.44580602377324,71.00390075153254],[-35.29934752820611,64.57265131888151],[-47.16355407438881,61."
+    },
+    "warning": {
+      "exists": true,
+      "type": "undefined",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": null
+    },
+    "hit": {
+      "exists": true,
+      "type": "boolean",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": false
+    },
+    "taxi_start": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 0
+    },
+    "taxi_time": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 3
+    },
+    "rules": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "ifr"
+    },
+    "isControllable": {
+      "exists": true,
+      "type": "boolean",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": false
+    },
+    "conflicts": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "{}"
+    },
+    "terrain_ranges": {
+      "exists": true,
+      "type": "boolean",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": false
+    },
+    "_isEstablishedOnHoldingPattern": {
+      "exists": true,
+      "type": "boolean",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": false
+    },
+    "isRemovable": {
+      "exists": true,
+      "type": "boolean",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": false
+    },
+    "projected": {
+      "exists": true,
+      "type": "boolean",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": false
+    },
+    "relativePositionHistory": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": true,
+      "value": [
+        [
+          61.32113840381688,
+          -21.091102304532026,
+          0
+        ],
+        [
+          60.53311803306273,
+          -20.83124100843486,
+          4.003000020980835
+        ],
+        [
+          59.74260469687901,
+          -20.57156192993014,
+          8.010999917984009
+        ]
+      ]
+    },
+    "category": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "arrival"
+    },
+    "target": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "{\"altitude\":15000,\"heading\":null,\"turn\":null,\"speed\":320}"
+    },
+    "_targetHeading": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": null
+    },
+    "_targetGroundTrack": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 5.026782036873483
+    },
+    "mcp": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "{\"isEnabled\":true,\"altitudeMode\":\"VNAV\",\"autopilotMode\":\"ON\",\"headingMode\":\"LNAV\",\"speedMode\":\"VNAV\",\"altitude\":12000,\"course\":-1,\"heading\":5.028252360551294,\"speed\":320,\"shouldExpediteAltitudeChange\":false,\"nav1Datum\":null,\"descentAngle\":0}"
+    },
+    "fms": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "[Complex Object]"
+    },
+    "pilot": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": true,
+      "isArray": false,
+      "value": "[Complex Object]"
+    },
+    "constructor": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function AircraftModel(){var options=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{};!function(instance,Constructor){if(!(instance instanceof Constructor))throw new TypeError(\"Cannot call a "
+    },
+    "buildCurrentTerrainRanges": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var _this=this,terrain=(0,_get2.default)(prop,\"airport.current.terrain\",null);terrain&&(this.terrain_ranges={},(this.terrain_level=0,_forEach2.default)(terrain,function(terrainRange,k){_thi"
+    },
+    "buildRestrictedAreaLinks": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var _this2=this,restrictedAreas=_AirportController.default.current.restricted_areas;(0,_forEach2.default)(restrictedAreas,function(area){_this2.restricted.list.push({data:area,range:null,in"
+    },
+    "parse": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(data){this.positionModel=data.positionModel,this.transponderCode=data.transponderCode,this.airlineId=data.airline,this.airlineCallsign=data.airlineCallsign,this.flightNumber=data.callsign,thi"
+    },
+    "getViewModel": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var assignedAltitude=\"-\",flightPlanAltitude=\"-\";return this.mcp.altitude!==_globalConstants.INVALID_NUMBER&&(assignedAltitude=Math.round(this.mcp.altitude)*_unitConverters.UNIT_CONVERSION_C"
+    },
+    "matchCallsign": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(callsignToMatch){return!(\"*\"!==callsignToMatch&&this.airlineId.toUpperCase()+callsignToMatch.toUpperCase()!==this.callsign)||(0,_isEqual2.default)(callsignToMatch.toUpperCase(),this.callsign)"
+    },
+    "getCallsign": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this.callsign.toUpperCase()}"
+    },
+    "getRadioCallsign": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var weight=this.model.getRadioWeightClass();return(0,_isEmpty2.default)(weight)||(weight=\" \".concat(weight)),\"November\"===this.airlineCallsign?\"\".concat(this.airlineCallsign,\" \").concat((0,"
+    },
+    "getClimbRate": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var serviceCeilingClimbRate,cr_uncorr,altitude=this.altitude,rate=this.model.rate.climb,ceiling=this.model.ceiling;return serviceCeilingClimbRate=this.model.engines.type===_aircraftConstant"
+    },
+    "cancelFix": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){this.fms.cancelFix()}"
+    },
+    "cancelLanding": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(!this.projected){var missedApproachAltitude=(0,_ceil2.default)(this.fms.arrivalRunwayModel.elevation+2e3,-3),nextIfrAltitudeBelow=(0,_floor2.default)(this.altitude,-3),nextAltitudeToMain"
+    },
+    "isAirborne": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return!this.isOnGround()}"
+    },
+    "isBeyondDecelerationPointForWaypointModel": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(waypointModel){if((0,_isNil2.default)(waypointModel))return!1;var waypointSpeed=waypointModel.speedMaximum,waypointDistance=this.positionModel.distanceToPosition(waypointModel.positionModel),"
+    },
+    "isBeyondTopOfDescentForWaypointModel": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(waypointModel,targetAltitude){var targetPosition=waypointModel.positionModel,waypointDistance=this.positionModel.distanceToPosition(targetPosition),descentTime=(targetAltitude-this.altitude)/"
+    },
+    "isArrival": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this.fms.isArrival()}"
+    },
+    "isDeparture": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this.fms.isDeparture()}"
+    },
+    "isOverflight": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return\"\"===this.origin&&\"\"===this.destination}"
+    },
+    "isAboveGlidepath": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this._calculateArrivalRunwayModelGlideslopeAltitude()-this.altitude<-_aircraftConstants.PERFORMANCE.MAXIMUM_ALTITUDE_DIFFERENCE_CONSIDERED_ESTABLISHED_ON_GLIDEPATH}"
+    },
+    "isEstablishedOnCourse": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var runwayModel=this.fms.arrivalRunwayModel;return!!runwayModel&&(runwayModel.isOnApproachCourse(this)&&runwayModel.isOnCorrectApproachGroundTrack(this.groundTrack))}"
+    },
+    "isEstablishedOnGlidepath": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var glideslopeAltitude=this._calculateArrivalRunwayModelGlideslopeAltitude();return(0,_core.abs)(glideslopeAltitude-this.altitude)<=_aircraftConstants.PERFORMANCE.MAXIMUM_ALTITUDE_DIFFERENC"
+    },
+    "isInsideAirspace": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(airport){return airport.isPointWithinAirspace(this.relativePosition,this.altitude)}"
+    },
+    "isOnFinal": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return!!this.isEstablishedOnCourse()&&this.positionModel.distanceToPosition(this.mcp.nav1Datum)<=_airportConstants.AIRPORT_CONSTANTS.FINAL_APPROACH_FIX_DISTANCE_NM}"
+    },
+    "isOnGround": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(this.isOverflight())return!1;var airportModel=this.fms.departureAirportModel,runwayModel=this.fms.departureRunwayModel;this.isArrival()&&(airportModel=this.fms.arrivalAirportModel,runway"
+    },
+    "isApron": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this.flightPhase===_aircraftConstants.FLIGHT_PHASE.APRON}"
+    },
+    "isStopped": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this.isOnGround()&&this.speed<5}"
+    },
+    "isStalling": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var isStalling=this.speed<this.model.speed.min&&this.isAirborne();return isStalling}"
+    },
+    "isTaxiing": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this.flightPhase===_aircraftConstants.FLIGHT_PHASE.APRON||this.flightPhase===_aircraftConstants.FLIGHT_PHASE.TAXI||this.flightPhase===_aircraftConstants.FLIGHT_PHASE.WAITING}"
+    },
+    "isTakeoff": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this.flightPhase===_aircraftConstants.FLIGHT_PHASE.TAKEOFF}"
+    },
+    "isVisible": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){return this.flightPhase!==_aircraftConstants.FLIGHT_PHASE.APRON&&this.flightPhase!==_aircraftConstants.FLIGHT_PHASE.TAXI&&(this.flightPhase!==_aircraftConstants.FLIGHT_PHASE.WAITING||this.f"
+    },
+    "setIsRemovable": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){this.isRemovable=!0}"
+    },
+    "getWindComponents": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var wind=_AirportController.default.airport_get().wind,crosswindAngle=(0,_flightMath.calculateCrosswindAngle)(this.heading,wind.angle);return{cross:(0,_core.sin)(crosswindAngle)*wind.speed,"
+    },
+    "moveToRunway": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(runwayModel){this.positionModel.setCoordinates(runwayModel.gps),this.heading=runwayModel.angle,this.altitude=runwayModel.elevation}"
+    },
+    "radioCall": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(msg,sectorType,alert){if(!this.projected){var writtenCallsign=this.callsign,spokenCallsign=this.getRadioCallsign(),logMessage=function(callsign){return\"\".concat(_AirportController.default.air"
+    },
+    "callUp": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var alt_log,alt_say;if(this.isAirborne()){var altdiff=this.altitude-this.mcp.altitude,alt=(0,_radioUtilities.digits_decimal)(this.altitude,-2);200<Math.abs(altdiff)?0<altdiff?(alt_log=\"desc"
+    },
+    "taxiToRunway": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(runwayModel){if(this.isAirborne())return[!1,\"unable to taxi, we're already airborne\"];if(this.flightPhase===_aircraftConstants.FLIGHT_PHASE.TAKEOFF)return[!1,\"unable to taxi, we're already ta"
+    },
+    "takeoff": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(runway){var cruiseSpeed=this.model.speed.cruise,initialAltitude=this.fms.getInitialClimbClearance();this._prepareMcpForTakeoff(initialAltitude,runway.angle,cruiseSpeed),this.setFlightPhase(_a"
+    },
+    "_prepareMcpForTakeoff": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(altitude,heading,speed){this.mcp.altitude===_globalConstants.INVALID_NUMBER&&this.mcp.setAltitudeFieldValue(altitude),this.mcp.altitudeMode===_modeControlConstants.MCP_MODE.ALTITUDE.OFF&&this"
+    },
+    "updateTarget": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){this.target.altitude=(0,_defaultTo2.default)(this._calculateTargetedAltitude(),this.target.altitude),this._updateTargetedDirectionality(),this.target.speed=(0,_defaultTo2.default)(this._cal"
+    },
+    "overrideTarget": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){switch(this.flightPhase){case _aircraftConstants.FLIGHT_PHASE.APRON:case _aircraftConstants.FLIGHT_PHASE.TAXI:case _aircraftConstants.FLIGHT_PHASE.WAITING:break;case _aircraftConstants.FLIG"
+    },
+    "setFlightPhase": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(phase){this.fms.setFlightPhase(phase)}"
+    },
+    "updateFlightPhase": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var runwayModel=this.fms.departureRunwayModel;switch(this.flightPhase){case _aircraftConstants.FLIGHT_PHASE.TAXI:_TimeKeeper.default.accumulatedDeltaTime-this.taxi_start>this.taxi_time&&(th"
+    },
+    "_calculateArrivalRunwayModelGlideslopeAltitude": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var runwayModel=this.fms.arrivalRunwayModel,distanceOnFinalKm=(0,_flightMath.getOffset)(this,runwayModel.relativePosition,runwayModel.angle)[1];return runwayModel.getGlideslopeAltitude(dist"
+    },
+    "_calculateCrabHeadingForGroundTrack": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(groundTrackHeading){var windVector=_AirportController.default.airport_get().getWindVectorAtAltitude(this.altitude),angleDifference=groundTrackHeading-(0,_vector.vradial)(windVector);return gr"
+    },
+    "_calculateGroundTrackForHeading": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(heading){var headingVector=(0,_vector.vscale)((0,_vector.vectorize2dFromRadians)(heading),this.trueAirspeed),windVector=_AirportController.default.airport_get().getWindVectorAtAltitude(this.a"
+    },
+    "_updateTargetedDirectionality": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(this.mcp.autopilotMode===_modeControlConstants.MCP_MODE.AUTOPILOT.ON)if(this.flightPhase!==_aircraftConstants.FLIGHT_PHASE.LANDING)switch(this.mcp.headingMode){case _modeControlConstants"
+    },
+    "_calculateTargetedSpeed": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(this.mcp.autopilotMode===_modeControlConstants.MCP_MODE.AUTOPILOT.ON){if(this.flightPhase===_aircraftConstants.FLIGHT_PHASE.LANDING)return this._calculateTargetedSpeedDuringLanding();swi"
+    },
+    "_calculateLegalSpeed": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(speed){return this.altitude<1e4?Math.min(speed,_airportConstants.AIRPORT_CONSTANTS.MAX_SPEED_BELOW_10K_FEET):speed}"
+    },
+    "_calculateTargetedAltitude": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(this.mcp.autopilotMode===_modeControlConstants.MCP_MODE.AUTOPILOT.ON){if(this.flightPhase===_aircraftConstants.FLIGHT_PHASE.LANDING)return this._calculateTargetedAltitudeDuringLanding();"
+    },
+    "_calculateTargetedAltitudeToInterceptGlidepath": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(!this.isEstablishedOnCourse())return this.mcp.altitude;var glideslopeAltitude=this._calculateArrivalRunwayModelGlideslopeAltitude();return Math.min(this.mcp.altitude,glideslopeAltitude)}"
+    },
+    "_calculateTargetedHeadingToInterceptCourse": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var _this$mcp=this.mcp,course=_this$mcp.course,nav1Datum=_this$mcp.nav1Datum,courseOffset=(0,_flightMath.getOffset)(this,nav1Datum.relativePosition,course),lateralDistanceFromCourseNm=(0,_u"
+    },
+    "_calculateTargetedGroundTrackLnav": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(!this.fms.currentWaypoint)return new Error(\"Unable to utilize LNAV, because there are no waypoints in the FMS\");if(this.fms.currentWaypoint.isVectorWaypoint)return this.fms.currentWaypoi"
+    },
+    "_calculateTargetedHeadingHold": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var currentWaypoint=this.fms.currentWaypoint,holdParameters=currentWaypoint.holdParameters,waypointRelativePosition=currentWaypoint.relativePosition,bearingToHoldFix=(0,_vector.vradial)((0,"
+    },
+    "_calculateTargetedAltitudeDuringLanding": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var runwayModel=this.fms.arrivalRunwayModel;return 0<(0,_flightMath.getOffset)(this,runwayModel.relativePosition,runwayModel.angle)[1]?this._calculateTargetedAltitudeToInterceptGlidepath():"
+    },
+    "_calculateTargetedAltitudeVnav": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var altitudeMaximumWaypoint=this.fms.findNextWaypointWithMaximumAltitudeRestriction(),altitudeMinimumWaypoint=this.fms.findNextWaypointWithMinimumAltitudeRestriction(),maximumAltitudeExists"
+    },
+    "_findFirstWaypoint": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(waypoints,waypointA,waypointB){return(0,_findIndex2.default)(waypoints,function(waypoint){return waypoint.name===waypointA.name})<(0,_findIndex2.default)(waypoints,function(waypoint){return w"
+    },
+    "_calculateTargetedAltitudeVnavClimb": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(waypointWithMinimumAltitudeRestriction){return waypointWithMinimumAltitudeRestriction.altitudeMinimum}"
+    },
+    "_calculateTargetedAltitudeVnavDescent": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(waypointModel,targetAltitude){if(this.isBeyondTopOfDescentForWaypointModel(waypointModel,targetAltitude))return targetAltitude}"
+    },
+    "_calculateTargetedGroundTrackDuringLanding": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var runwayModel=this.fms.arrivalRunwayModel,offset=(0,_flightMath.getOffset)(this,runwayModel.relativePosition,runwayModel.angle);return 0<(0,_unitConverters.nm)(offset[1])?this.positionMod"
+    },
+    "_calculateTargetedSpeedDuringLanding": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var startSpeed=this.speed,runwayModel=this.fms.arrivalRunwayModel,offset=(0,_flightMath.getOffset)(this,runwayModel.relativePosition,runwayModel.angle),distanceOnFinal_nm=(0,_unitConverters"
+    },
+    "_calculateTargetedSpeedVnav": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var nextSpeedMaximumWaypoint=this.fms.findNextWaypointWithMaximumSpeedAtOrBelow(this.speed),nextSpeedMinimumWaypoint=this.fms.findNextWaypointWithMinimumSpeedAtOrAbove(this.speed),hasMaximu"
+    },
+    "_calculateTargetedSpeedVnavAcceleration": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(waypointWithMinimumSpeedRestriction){var waypointMinimumSpeed=waypointWithMinimumSpeedRestriction.speedMinimum;return Math.min(waypointMinimumSpeed,this.mcp.speed)}"
+    },
+    "_calculateTargetedSpeedVnavDeceleration": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(waypointWithMaximumSpeedRestriction){var waypointMaximumSpeed=waypointWithMaximumSpeedRestriction.speedMaximum;if(this.isBeyondDecelerationPointForWaypointModel(waypointWithMaximumSpeedRestri"
+    },
+    "updatePhysics": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(!this.isTaxiing()){if(this.hit)return this.altitude-=90*_TimeKeeper.default.getDeltaTimeForGameStateAndTimewarp(),void(this.speed*=.99);this.updateAircraftTurnPhysics(),this.updateAltitu"
+    },
+    "updateAircraftTurnPhysics": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(this.isOnGround()||this.heading===this.targetHeading)this.target.turn=null;else{var secondsElapsed=_TimeKeeper.default.getDeltaTimeForGameStateAndTimewarp(),angle_diff=(0,_circle.angle_o"
+    },
+    "updateAltitudePhysics": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){this.trend=0,this.target.altitude<this.altitude?this.decreaseAircraftAltitude():this.target.altitude>this.altitude&&this.increaseAircraftAltitude()}"
+    },
+    "decreaseAircraftAltitude": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var altitude_diff=this.altitude-this.target.altitude,descentRate=this.model.rate.descent*_aircraftConstants.PERFORMANCE.TYPICAL_DESCENT_FACTOR;(this.mcp.shouldExpediteAltitudeChange||this.i"
+    },
+    "increaseAircraftAltitude": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var altitude_diff=this.altitude-this.target.altitude,climbRate=this.getClimbRate()*_aircraftConstants.PERFORMANCE.TYPICAL_CLIMB_FACTOR;(this.mcp.shouldExpediteAltitudeChange||this.isTakeoff"
+    },
+    "updateSpeedPhysics": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var speedChange=0,differenceBetweenPresentAndTargetSpeeds=this.speed-this.target.speed;0!==differenceBetweenPresentAndTargetSpeeds&&(this.speed>this.target.speed?(speedChange=-this.model.ra"
+    },
+    "updateGroundSpeedPhysics": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var trueAirspeed=this.speed*(1+this.altitude*_environmentConstants.ENVIRONMENT.DENSITY_ALT_INCREASE_FACTOR_PER_FT),flightThroughAirVector=(0,_vector.vscale)((0,_vector.vectorize2dFromRadian"
+    },
+    "updateWarning": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var area,warning,status,new_inside;if(!this.isTaxiing()){if(warning=!1,this.positionModel){for(var i=0;i<this.restricted.list.length;i++)(area=this.restricted.list[i]).data.height<this.alti"
+    },
+    "update": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){this.updateFlightPhase(),this.updateTarget(),this.updatePhysics(),this._updateAircraftControllability()}"
+    },
+    "addConflict": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(conflict,conflictingAircraft){this.conflicts[conflictingAircraft.callsign]=conflict}"
+    },
+    "hasConflictWithAircraftModel": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(conflictingAircraftModel){return conflictingAircraftModel.callsign in this.conflicts}"
+    },
+    "getAlerts": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){var alert=[!1,!1];for(var i in this.conflicts){var hasConflict=this.conflicts[i].hasConflict(),hasViolation=this.conflicts[i].hasViolation();if(alert[0]=alert[0]||hasConflict,alert[1]=alert"
+    },
+    "removeConflict": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(conflictingAircraft){delete this.conflicts[conflictingAircraft.callsign]}"
+    },
+    "_contactAircraftAfterControllabilityChange": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){this.isControllable?this.callUp():(this.setIsRemovable(),_EventBus.default.trigger(_eventNames.AIRCRAFT_EVENT.AIRSPACE_EXIT,this))}"
+    },
+    "_updateAircraftControllability": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(){if(!this.projected){var isInsideAirspace=this.isInsideAirspace(_AirportController.default.airport_get());this.isControllable!==isInsideAirspace&&(this.isControllable=isInsideAirspace,this._"
+    },
+    "distanceToAircraft": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(anotherAircraftModel){return this.positionModel.distanceToPosition(anotherAircraftModel.positionModel)}"
+    },
+    "validateNextAltitude": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(nextAltitude,airportModel){if(nextAltitude===_globalConstants.INVALID_NUMBER)return[!1,\"unable, no altitude assigned\"];if(\"number\"!=typeof nextAltitude)return[!1,\"unable to maintain an altitu"
+    },
+    "validateNextSpeed": {
+      "exists": true,
+      "type": "function",
+      "isFunction": true,
+      "isObject": false,
+      "isArray": false,
+      "value": "function(nextSpeed){return nextSpeed===_globalConstants.INVALID_NUMBER?[!1,\"unable, no speed assigned\"]:\"number\"!=typeof nextSpeed?[!1,\"unable to maintain a speed of \".concat(nextSpeed)]:this.model.is"
+    },
+    "targetHeading": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 5.007187090833035
+    },
+    "targetGroundTrack": {
+      "exists": true,
+      "type": "number",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": 5.026782036873483
+    },
+    "callsign": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "QXE5732"
+    },
+    "flightPhase": {
+      "exists": true,
+      "type": "string",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": false,
+      "value": "CRUISE"
+    },
+    "relativePosition": {
+      "exists": true,
+      "type": "object",
+      "isFunction": false,
+      "isObject": false,
+      "isArray": true,
+      "value": [
+        59.377406518359486,
+        -20.451642036711657
+      ]
+    }
+  },
+  "sampleAircraftData": {
+    "id": "aircraft-1245",
+    "positionModel": {
+      "_id": "position-model-429",
+      "latitude": 47.125843628730316,
+      "longitude": -121.62773372225777,
+      "elevation": 0,
+      "_referencePosition": {
+        "_id": "position-model-76",
+        "latitude": 47.44983333333333,
+        "longitude": -122.31183333333334,
+        "elevation": 432,
+        "_referencePosition": null,
+        "_magneticNorth": 0.2792526803190927,
+        "_relativePosition": [
+          0,
+          0
+        ]
+      },
+      "_magneticNorth": 0.2792526803190927
+    },
+    "model": {
+      "_id": "BaseModel-1178",
+      "name": "Bombardier Dash 8 Q400",
+      "icao": "DH8D",
+      "icaoWithWeightClass": "DH8D/L",
+      "engines": {
+        "number": 2,
+        "type": "T"
+      },
+      "weightClass": "M",
+      "category": {
+        "srs": 3,
+        "lahso": 6,
+        "recat": "D"
+      },
+      "ceiling": 27000,
+      "rate": {
+        "climb": 3500,
+        "descent": 1500,
+        "accelerate": 10,
+        "decelerate": 6
+      },
+      "runway": {
+        "takeoff": 1.22,
+        "landing": 1.293
+      },
+      "speed": {
+        "min": 100,
+        "landing": 130,
+        "cruise": 340,
+        "cruiseM": null,
+        "max": 360,
+        "maxM": null
+      },
+      "capability": {
+        "ils": true,
+        "fix": true
+      }
+    },
+    "airlineId": "qxe",
+    "airlineCallsign": "Horizon",
+    "flightNumber": "5732",
+    "shouldTakeOffWhenRunwayIsClear": false,
+    "transponderCode": "3770",
+    "pilotVoice": {
+      "voice": "Daniel",
+      "pitch": "0.9",
+      "rate": "1.064"
+    },
+    "heading": 5.007187090833035,
+    "altitude": 15000,
+    "speed": 320,
+    "groundSpeed": 405.36264982085277,
+    "groundTrack": -1.2564032703061032,
+    "takeoffTime": 0,
+    "trueAirspeed": 396.8,
+    "radial": 1.9025046603061935,
+    "distance": 62.800844475566656,
+    "origin": "",
+    "destination": "ksea",
+    "trend": 0,
+    "history": [],
+    "restricted": {
+      "list": [
+        {
+          "data": {
+            "name": "P-51",
+            "height": 2500,
+            "poly": [
+              [
+                -43.11904124814836,
+                25.10090137225592
+              ],
+              [
+                -41.413106437960806,
+                19.251498712809322
+              ],
+              [
+                -38.29768731315949,
+                17.082215615558084
+              ],
+              [
+                -35.08782420239646,
+                18.096847169335806
+              ],
+              [
+                -37.57224439689508,
+                26.538472942165914
+              ]
+            ],
+            "labelRelativePositions": [
+              [
+                -39.10343272527241,
+                21.810344278861997
+              ]
+            ]
+          },
+          "range": null,
+          "inside": false
+        },
+        {
+          "data": {
+            "name": "R-6701",
+            "height": 5000,
+            "poly": [
+              [
+                -41.44580602377324,
+                71.00390075153254
+              ],
+              [
+                -35.29934752820611,
+                64.57265131888151
+              ],
+              [
+                -47.16355407438881,
+                61.84542161625193
+              ],
+              [
+                -48.8345217175805,
+                68.88522061964962
+              ]
+            ],
+            "labelRelativePositions": [
+              [
+                -42.06693462289331,
+                66.42466118389224
+              ]
+            ]
+          },
+          "range": null,
+          "inside": false
+        },
+        {
+          "data": {
+            "name": "R-6703",
+            "height": 14000,
+            "poly": [
+              [
+                -15.64238415776629,
+                -47.863406793218815
+              ],
+              [
+                -15.024207467208477,
+                -50.57371011536328
+              ],
+              [
+                -15.04169595400439,
+                -65.774863750149
+              ],
+              [
+                -13.440304934558933,
+                -66.94721311338431
+              ],
+              [
+                -11.008143564594064,
+                -65.72100070777161
+              ],
+              [
+                -8.320181675587685,
+                -57.62328626366417
+              ],
+              [
+                -8.534437685289712,
+                -47.57541411443025
+              ],
+              [
+                -12.243984708160946,
+                -46.60125673928651
+              ]
+            ],
+            "labelRelativePositions": [
+              [
+                -11.981282916676989,
+                -56.77423492633541
+              ]
+            ]
+          },
+          "range": null,
+          "inside": false
+        },
+        {
+          "data": {
+            "name": "R-6703",
+            "height": 5000,
+            "poly": [
+              [
+                -8.534437685289712,
+                -47.57541411443025
+              ],
+              [
+                -8.320181675587685,
+                -57.62328626366417
+              ],
+              [
+                -6.712730319694652,
+                -54.01562224718672
+              ],
+              [
+                -5.918451697374021,
+                -53.625214466268474
+              ],
+              [
+                -4.592594860357642,
+                -52.74376067335357
+              ],
+              [
+                -4.234124436517916,
+                -52.43121560730128
+              ],
+              [
+                -4.0813872984375585,
+                -52.037117247994566
+              ],
+              [
+                -4.029053314533311,
+                -51.70228966099205
+              ],
+              [
+                -3.0167771455308867,
+                -51.226884671272614
+              ],
+              [
+                -2.6646489939869626,
+                -51.11501686758863
+              ],
+              [
+                -2.4113820199576974,
+                -50.78845016590184
+              ],
+              [
+                -2.7750380708893614,
+                -49.49038647660875
+              ],
+              [
+                -3.431383251476742,
+                -48.917951195051984
+              ]
+            ],
+            "labelRelativePositions": [
+              [
+                -5.4729098526237046,
+                -52.599350189047215
+              ]
+            ]
+          },
+          "range": null,
+          "inside": false
+        }
+      ]
+    },
+    "warning": null,
+    "hit": false,
+    "taxi_start": 0,
+    "taxi_time": 3,
+    "rules": "ifr",
+    "isControllable": false,
+    "conflicts": {},
+    "terrain_ranges": false,
+    "_isEstablishedOnHoldingPattern": false,
+    "isRemovable": false,
+    "projected": false,
+    "relativePositionHistory": [
+      [
+        61.32113840381688,
+        -21.091102304532026,
+        0
+      ],
+      [
+        60.53311803306273,
+        -20.83124100843486,
+        4.003000020980835
+      ],
+      [
+        59.74260469687901,
+        -20.57156192993014,
+        8.010999917984009
+      ]
+    ],
+    "category": "arrival",
+    "target": {
+      "altitude": 15000,
+      "heading": null,
+      "turn": null,
+      "speed": 320
+    },
+    "_targetHeading": null,
+    "_targetGroundTrack": 5.026782036873483,
+    "mcp": {
+      "isEnabled": true,
+      "altitudeMode": "VNAV",
+      "autopilotMode": "ON",
+      "headingMode": "LNAV",
+      "speedMode": "VNAV",
+      "altitude": 12000,
+      "course": -1,
+      "heading": 5.028252360551294,
+      "speed": 320,
+      "shouldExpediteAltitudeChange": false,
+      "nav1Datum": null,
+      "descentAngle": 0
+    },
+    "fms": "[Non-serializable Object]",
+    "pilot": "[Non-serializable Object]",
+    "targetHeading": 5.007187090833035,
+    "targetGroundTrack": 5.026782036873483,
+    "callsign": "QXE5732",
+    "flightPhase": "CRUISE",
+    "relativePosition": [
+      59.377406518359486,
+      -20.451642036711657
+    ]
+  },
+  "allAircraft": [
+    {
+      "callsign": "QXE5732",
+      "relativePosition": [
+        59.377406518359486,
+        -20.451642036711657
+      ],
+      "altitude": 15000,
+      "heading": 5.007187090833035,
+      "speed": 320,
+      "groundSpeed": 405.36264982085277,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 5.028252360551294,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 3
+      }
+    },
+    {
+      "callsign": "ASA245",
+      "relativePosition": [
+        126.51648983054946,
+        -43.021587837910936
+      ],
+      "altitude": 20000,
+      "heading": 5.017664742830122,
+      "speed": 320,
+      "groundSpeed": 431.7139634742499,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 5.042546178681159,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 5
+      }
+    },
+    {
+      "callsign": "AAL847",
+      "relativePosition": [
+        172.26298767077193,
+        -59.89809655161514
+      ],
+      "altitude": 27000,
+      "heading": 5.102878914902932,
+      "speed": 320,
+      "groundSpeed": 469.2310723908872,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 5.125557821028345,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 6
+      }
+    },
+    {
+      "callsign": "ASA502",
+      "relativePosition": [
+        227.62752199467693,
+        -84.80596895994927
+      ],
+      "altitude": 21000,
+      "heading": 5.111076263867954,
+      "speed": 320,
+      "groundSpeed": 437.7107316567347,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 5.138479617531597,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 8
+      }
+    },
+    {
+      "callsign": "JBU2685",
+      "relativePosition": [
+        255.74740376128128,
+        -97.74119612259621
+      ],
+      "altitude": 19000,
+      "heading": 5.115318442924769,
+      "speed": 320,
+      "groundSpeed": 427.2124279846805,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 5.138479617531597,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 8
+      }
+    },
+    {
+      "callsign": "QXE9274",
+      "relativePosition": [
+        295.5765147752031,
+        -116.38908205218577
+      ],
+      "altitude": 18000,
+      "heading": 5.121031633410535,
+      "speed": 320,
+      "groundSpeed": 421.9880362796074,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 5.138479617531597,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 8
+      }
+    },
+    {
+      "callsign": "DLH9IX",
+      "relativePosition": [
+        29.284589468402977,
+        56.701314670449484
+      ],
+      "altitude": 12000,
+      "heading": 3.5769451865565958,
+      "speed": 320,
+      "groundSpeed": 375.1842892289238,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 3.6015282071337,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 3
+      }
+    },
+    {
+      "callsign": "QXE9986",
+      "relativePosition": [
+        72.50986321302523,
+        67.17237265305342
+      ],
+      "altitude": 16000,
+      "heading": 4.503082783987941,
+      "speed": 320,
+      "groundSpeed": 405.7238730046737,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 4.535478075250653,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 5
+      }
+    },
+    {
+      "callsign": "SWA402",
+      "relativePosition": [
+        170.72383264497125,
+        84.41453650363043
+      ],
+      "altitude": 26000,
+      "heading": 4.51984076373112,
+      "speed": 320,
+      "groundSpeed": 457.72202104751045,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 4.55236798098432,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 7
+      }
+    },
+    {
+      "callsign": "SKW7090",
+      "relativePosition": [
+        261.29452862270904,
+        98.78018276866325
+      ],
+      "altitude": 25000,
+      "heading": 4.5354722707081105,
+      "speed": 320,
+      "groundSpeed": 452.73662508572613,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 4.576071776949098,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 8
+      }
+    },
+    {
+      "callsign": "QXE8199",
+      "relativePosition": [
+        355.2934317722602,
+        113.70978755270833
+      ],
+      "altitude": 28827.555002570152,
+      "heading": 4.475643769347704,
+      "speed": 320,
+      "groundSpeed": 471.783825921991,
+      "category": "arrival",
+      "flightPhase": "DESCENT",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 4.526545126761458,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 9
+      }
+    },
+    {
+      "callsign": "ASA532",
+      "relativePosition": [
+        414.9956068349297,
+        125.97640470983143
+      ],
+      "altitude": 35000,
+      "heading": 4.486063413291565,
+      "speed": 320,
+      "groundSpeed": 503.8690617066332,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 4.526545126761458,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 9
+      }
+    },
+    {
+      "callsign": "ASA435",
+      "relativePosition": [
+        479.044967827714,
+        138.41282006875238
+      ],
+      "altitude": 31000,
+      "heading": 4.4975251396747336,
+      "speed": 320,
+      "groundSpeed": 483.3240822616173,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 12000,
+        "heading": 4.526545126761458,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 9
+      }
+    },
+    {
+      "callsign": "JBU85",
+      "relativePosition": [
+        -7.328570423492436,
+        -90.02841292540096
+      ],
+      "altitude": 13000,
+      "heading": 5.985299015529454,
+      "speed": 320,
+      "groundSpeed": 397.54456242648615,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 5.979122672637252,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 9
+      }
+    },
+    {
+      "callsign": "ASA415",
+      "relativePosition": [
+        25.67771711820844,
+        -174.56143324019365
+      ],
+      "altitude": 23000,
+      "heading": 5.8352915976743285,
+      "speed": 320,
+      "groundSpeed": 450.78590891555314,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 5.83349975731631,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 11
+      }
+    },
+    {
+      "callsign": "ASA8351",
+      "relativePosition": [
+        47.75459309366006,
+        -220.48480999101338
+      ],
+      "altitude": 27000,
+      "heading": 5.830542496078613,
+      "speed": 320,
+      "groundSpeed": 471.98857090593935,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 5.829002767385893,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 12
+      }
+    },
+    {
+      "callsign": "FDX3480",
+      "relativePosition": [
+        115.23728315105595,
+        -362.1617638911857
+      ],
+      "altitude": 36000,
+      "heading": 5.834783883116361,
+      "speed": 320,
+      "groundSpeed": 519.680001658166,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 5.834509292442772,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 13
+      }
+    },
+    {
+      "callsign": "ASA858",
+      "relativePosition": [
+        148.02327457404337,
+        -432.0212001931827
+      ],
+      "altitude": 35000,
+      "heading": 5.836805741377214,
+      "speed": 320,
+      "groundSpeed": 514.3782193058671,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 5.837743706712519,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 13
+      }
+    },
+    {
+      "callsign": "AAL1317",
+      "relativePosition": [
+        175.58461745290379,
+        -491.2476751129081
+      ],
+      "altitude": 27000,
+      "heading": 5.838387464098573,
+      "speed": 320,
+      "groundSpeed": 471.9807180807862,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 5.837743706712519,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 14
+      }
+    },
+    {
+      "callsign": "CPZ396",
+      "relativePosition": [
+        203.61220673300213,
+        -551.9403622749088
+      ],
+      "altitude": 24000,
+      "heading": 5.840022382663265,
+      "speed": 320,
+      "groundSpeed": 456.0806660559356,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 5.837743706712519,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 14
+      }
+    },
+    {
+      "callsign": "DAL7749",
+      "relativePosition": [
+        -47.323424189661516,
+        48.94143083110297
+      ],
+      "altitude": 11000,
+      "heading": 1.8877259234936536,
+      "speed": 295.3650003671646,
+      "groundSpeed": 339.30506630556533,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 1.864544721544763,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 3
+      }
+    },
+    {
+      "callsign": "FDX5060",
+      "relativePosition": [
+        -89.72894477425731,
+        116.32513318002046
+      ],
+      "altitude": 17000,
+      "heading": 2.6719637794669526,
+      "speed": 320,
+      "groundSpeed": 395.0757351475095,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 2.672068163893398,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 5
+      }
+    },
+    {
+      "callsign": "DAL304",
+      "relativePosition": [
+        -109.44076861454897,
+        154.75840615224533
+      ],
+      "altitude": 20000,
+      "heading": 2.6705347572694027,
+      "speed": 320,
+      "groundSpeed": 409.8955676623338,
+      "category": "arrival",
+      "flightPhase": "CRUISE",
+      "mcp": {
+        "altitude": 6000,
+        "heading": 2.672068163893398,
+        "speed": 320
+      },
+      "fms": {
+        "arrivalRunwayModel": {
+          "name": "16R"
+        },
+        "waypoints": 5
+      }
+    },
+    {
+      "callsign": "QXE4731",
+      "relativePosition": [
+        -0.09664063371552957,
+        1.406381549742689
+      ],
+      "altitude": 432.5,
+      "heading": 2.868280819312215,
+      "speed": 77.82308837947187,
+      "groundSpeed": 69.67763173679008,
+      "category": "departure",
+      "flightPhase": "TAKEOFF",
+      "mcp": {
+        "altitude": 7000,
+        "heading": 2.868280819312215,
+        "speed": 340
+      },
+      "fms": {
+        "arrivalRunwayModel": null,
+        "waypoints": 6
+      }
+    }
+  ],
+  "propertyList": [
+    "_calculateArrivalRunwayModelGlideslopeAltitude",
+    "_calculateCrabHeadingForGroundTrack",
+    "_calculateGroundTrackForHeading",
+    "_calculateLegalSpeed",
+    "_calculateTargetedAltitude",
+    "_calculateTargetedAltitudeDuringLanding",
+    "_calculateTargetedAltitudeToInterceptGlidepath",
+    "_calculateTargetedAltitudeVnav",
+    "_calculateTargetedAltitudeVnavClimb",
+    "_calculateTargetedAltitudeVnavDescent",
+    "_calculateTargetedGroundTrackDuringLanding",
+    "_calculateTargetedGroundTrackLnav",
+    "_calculateTargetedHeadingHold",
+    "_calculateTargetedHeadingToInterceptCourse",
+    "_calculateTargetedSpeed",
+    "_calculateTargetedSpeedDuringLanding",
+    "_calculateTargetedSpeedVnav",
+    "_calculateTargetedSpeedVnavAcceleration",
+    "_calculateTargetedSpeedVnavDeceleration",
+    "_contactAircraftAfterControllabilityChange",
+    "_findFirstWaypoint",
+    "_isEstablishedOnHoldingPattern",
+    "_prepareMcpForTakeoff",
+    "_targetGroundTrack",
+    "_targetHeading",
+    "_updateAircraftControllability",
+    "_updateTargetedDirectionality",
+    "addConflict",
+    "airlineCallsign",
+    "airlineId",
+    "altitude",
+    "buildCurrentTerrainRanges",
+    "buildRestrictedAreaLinks",
+    "callUp",
+    "callsign",
+    "cancelFix",
+    "cancelLanding",
+    "category",
+    "conflicts",
+    "constructor",
+    "decreaseAircraftAltitude",
+    "destination",
+    "distance",
+    "distanceToAircraft",
+    "flightNumber",
+    "flightPhase",
+    "fms",
+    "getAlerts",
+    "getCallsign",
+    "getClimbRate",
+    "getRadioCallsign",
+    "getViewModel",
+    "getWindComponents",
+    "groundSpeed",
+    "groundTrack",
+    "hasConflictWithAircraftModel",
+    "heading",
+    "history",
+    "hit",
+    "id",
+    "increaseAircraftAltitude",
+    "isAboveGlidepath",
+    "isAirborne",
+    "isApron",
+    "isArrival",
+    "isBeyondDecelerationPointForWaypointModel",
+    "isBeyondTopOfDescentForWaypointModel",
+    "isControllable",
+    "isDeparture",
+    "isEstablishedOnCourse",
+    "isEstablishedOnGlidepath",
+    "isInsideAirspace",
+    "isOnFinal",
+    "isOnGround",
+    "isOverflight",
+    "isRemovable",
+    "isStalling",
+    "isStopped",
+    "isTakeoff",
+    "isTaxiing",
+    "isVisible",
+    "matchCallsign",
+    "mcp",
+    "model",
+    "moveToRunway",
+    "origin",
+    "overrideTarget",
+    "parse",
+    "pilot",
+    "pilotVoice",
+    "positionModel",
+    "projected",
+    "radial",
+    "radioCall",
+    "relativePosition",
+    "relativePositionHistory",
+    "removeConflict",
+    "restricted",
+    "rules",
+    "setFlightPhase",
+    "setIsRemovable",
+    "shouldTakeOffWhenRunwayIsClear",
+    "speed",
+    "takeoff",
+    "takeoffTime",
+    "target",
+    "targetGroundTrack",
+    "targetHeading",
+    "taxiToRunway",
+    "taxi_start",
+    "taxi_time",
+    "terrain_ranges",
+    "transponderCode",
+    "trend",
+    "trueAirspeed",
+    "update",
+    "updateAircraftTurnPhysics",
+    "updateAltitudePhysics",
+    "updateFlightPhase",
+    "updateGroundSpeedPhysics",
+    "updatePhysics",
+    "updateSpeedPhysics",
+    "updateTarget",
+    "updateWarning",
+    "validateNextAltitude",
+    "validateNextSpeed",
+    "warning"
+  ]
+}

@@ -135,6 +135,8 @@ JS_GET_GAME_STATE_SCRIPT = """
             category: ac.category,
             isOnGround: ac.isOnGround(),
             isTaxiing: ac.isTaxiing(),
+            isEstablished: ac.isEstablishedOnCourse ? ac.isEstablishedOnCourse() : false,
+            targetRunway: ac.fms && ac.fms.arrivalRunwayModel ? ac.fms.arrivalRunwayModel.name : null,
         });
     }
 
@@ -283,6 +285,150 @@ JS_GET_ENHANCED_GAME_STATE_SCRIPT = """
         score: score,
         time: gameTime,
         weather: weather,
+        numAircraft: aircraft.length
+    };
+})();
+"""
+
+# Optimal extraction script - extracts the 14 required features per aircraft plus
+# additional ATC-critical data for maximum efficiency in production training data collection
+JS_GET_OPTIMAL_GAME_STATE_SCRIPT = """
+(function() {
+    if (!window.aircraftController) return null;
+
+    const aircraft = [];
+    for (const ac of window.aircraftController.aircraft.list) {
+        // Extract wind components
+        let windComponents = {cross: 0, head: 0};
+        try {
+            if (ac.getWindComponents && typeof ac.getWindComponents === 'function') {
+                windComponents = ac.getWindComponents();
+            }
+        } catch (e) {
+            windComponents = {cross: 0, head: 0};
+        }
+        
+        // Extract FMS/waypoint data safely
+        let nextWaypoint = null;
+        let currentWaypoint = null;
+        let flightPlanAltitude = null;
+        let flightPlanRoute = null;
+        let targetRunway = null;
+        try {
+            if (ac.fms) {
+                nextWaypoint = (ac.fms.nextWaypoint && ac.fms.nextWaypoint.name) ? ac.fms.nextWaypoint.name : null;
+                currentWaypoint = (ac.fms.currentWaypoint && ac.fms.currentWaypoint.name) ? ac.fms.currentWaypoint.name : null;
+                flightPlanAltitude = (ac.fms.flightPlanAltitude !== undefined && ac.fms.flightPlanAltitude !== null) ? ac.fms.flightPlanAltitude : null;
+                if (ac.fms.getFullRouteStringWithoutAirportsWithSpaces && typeof ac.fms.getFullRouteStringWithoutAirportsWithSpaces === 'function') {
+                    flightPlanRoute = ac.fms.getFullRouteStringWithoutAirportsWithSpaces();
+                }
+                // Extract target runway (critical for ILS commands and action masking)
+                targetRunway = (ac.fms.arrivalRunwayModel && ac.fms.arrivalRunwayModel.name) ? ac.fms.arrivalRunwayModel.name : null;
+            }
+        } catch (e) {
+            // FMS data extraction failed, leave as null
+        }
+        
+        // Extract pilot/approach data safely
+        let hasApproachClearance = false;
+        try {
+            if (ac.pilot && ac.pilot.hasApproachClearance !== undefined) {
+                hasApproachClearance = ac.pilot.hasApproachClearance;
+            }
+        } catch (e) {
+            hasApproachClearance = false;
+        }
+        
+        // Extract landing status safely
+        let isOnFinal = false;
+        let isEstablishedOnGlidepath = false;
+        try {
+            if (ac.isOnFinal && typeof ac.isOnFinal === 'function') {
+                isOnFinal = ac.isOnFinal();
+            }
+            if (ac.isEstablishedOnGlidepath && typeof ac.isEstablishedOnGlidepath === 'function') {
+                isEstablishedOnGlidepath = ac.isEstablishedOnGlidepath();
+            }
+        } catch (e) {
+            // Methods not available or failed
+        }
+        
+        // Extract climb rate/vertical speed safely
+        let climbRate = null;
+        try {
+            if (ac.getClimbRate && typeof ac.getClimbRate === 'function') {
+                climbRate = ac.getClimbRate();
+            }
+        } catch (e) {
+            climbRate = null;
+        }
+        
+        aircraft.push({
+            callsign: ac.callsign,
+            position: ac.relativePosition,                    // Features 0, 1: x, y position
+            altitude: ac.altitude,                             // Feature 2: altitude
+            heading: ac.heading,                               // Feature 3: heading
+            speed: ac.speed,                                    // Feature 4: speed
+            groundSpeed: ac.groundSpeed,                       // Feature 5: ground speed
+            assignedAltitude: ac.mcp.altitude,                 // Feature 6: assigned altitude
+            assignedHeading: ac.mcp.heading,                   // Feature 7: assigned heading
+            assignedSpeed: ac.mcp.speed,                       // Feature 8: assigned speed
+            isOnGround: ac.isOnGround(),                       // Feature 9: is on ground
+            isTaxiing: ac.isTaxiing(),                         // Feature 10: is taxiing
+            isEstablished: ac.isEstablishedOnCourse ? ac.isEstablishedOnCourse() : false, // Feature 11: is established
+            category: ac.category,                             // Features 12, 13: is_arrival, is_departure
+            
+            // Additional ATC-critical data
+            windComponents: windComponents,                     // Wind: crosswind and headwind components
+            flightPhase: ac.flightPhase || null,               // Current flight phase
+            nextWaypoint: nextWaypoint,                         // Next waypoint name
+            currentWaypoint: currentWaypoint,                   // Current waypoint name
+            flightPlanAltitude: flightPlanAltitude,            // Flight plan altitude
+            flightPlanRoute: flightPlanRoute,                  // Flight plan route string
+            targetRunway: targetRunway,                        // Target runway (critical for ILS commands)
+            hasApproachClearance: hasApproachClearance,        // Approach clearance status
+            isOnFinal: isOnFinal,                              // Is on final approach
+            isEstablishedOnGlidepath: isEstablishedOnGlidepath, // Is established on glidepath
+            
+            // Operational state fields
+            isControllable: ac.isControllable !== undefined ? ac.isControllable : true, // Whether aircraft can receive commands
+            transponderCode: ac.transponderCode || null,       // Transponder/squawk code
+            groundTrack: ac.groundTrack !== undefined ? ac.groundTrack : null, // Actual track over ground (radians)
+            trueAirspeed: ac.trueAirspeed !== undefined ? ac.trueAirspeed : null, // True airspeed vs indicated
+            climbRate: climbRate,                              // Vertical speed/climb rate (ft/min)
+            distance: ac.distance !== undefined ? ac.distance : null, // Distance to airport/reference (nm)
+        });
+    }
+
+    const conflicts = [];
+    if (window.aircraftController.conflicts) {
+        window.aircraftController.conflicts.forEach(c => {
+            conflicts.push({
+                aircraft1: c.aircraft[0].callsign,
+                aircraft2: c.aircraft[1].callsign,
+                distance: c.distance,
+                altitude: c.altitude,
+                hasConflict: c.hasConflict(),
+                hasViolation: c.hasViolation()
+            });
+        });
+    }
+
+    // Get game time
+    let gameTime = 0;
+    if (window._getRLGameTime) {
+        try { gameTime = window._getRLGameTime(); } catch (e) {}
+    }
+
+    // Get score from DOM
+    const scoreElement = document.querySelector('#score');
+    const score = scoreElement ? (parseInt(scoreElement.textContent) || 0) : 0;
+
+    return {
+        aircraft: aircraft,
+        conflicts: conflicts,
+        score: score,
+        time: gameTime,
         numAircraft: aircraft.length
     };
 })();

@@ -15,7 +15,12 @@ from playwright.async_api import async_playwright, Browser as AsyncBrowser, Page
 
 from .config import BrowserConfig
 from .exceptions import BrowserError, GameInterfaceError
-from .constants import JS_EXECUTE_COMMAND_SCRIPT, JS_GET_GAME_STATE_SCRIPT, JS_GET_ENHANCED_GAME_STATE_SCRIPT
+from .constants import (
+    JS_EXECUTE_COMMAND_SCRIPT,
+    JS_GET_GAME_STATE_SCRIPT,
+    JS_GET_ENHANCED_GAME_STATE_SCRIPT,
+    JS_GET_OPTIMAL_GAME_STATE_SCRIPT,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -459,6 +464,47 @@ def extract_enhanced_game_state(page: Page) -> Dict[str, Any]:
         raise GameInterfaceError(f"Enhanced state extraction failed: {e}") from e
 
 
+def extract_optimal_game_state(page: Page) -> Dict[str, Any]:
+    """
+    Extract optimal game state from OpenScope with required features plus ATC-critical data.
+    
+    This function extracts:
+    - The 14 core features per aircraft needed by StateProcessor (position, altitude, heading, etc.)
+    - Additional ATC-critical data: wind components, flight phase, waypoints, flight plan,
+      approach clearance status, and landing status
+    
+    Provides maximum efficiency for production training data collection while including
+    all information needed for real ATC decision-making.
+    
+    Args:
+        page: Playwright page object
+        
+    Returns:
+        Dict containing optimal aircraft data (with extended fields), conflicts, score, and time
+        
+    Raises:
+        GameInterfaceError: If state extraction fails
+    """
+    if not page:
+        raise GameInterfaceError("Page not available")
+    
+    try:
+        result = page.evaluate(JS_GET_OPTIMAL_GAME_STATE_SCRIPT)
+        
+        if result is None:
+            logger.warning("Optimal game state extraction returned null")
+            return {}
+        
+        logger.debug(f"Extracted optimal state: {len(result.get('aircraft', []))} aircraft, "
+                    f"{len(result.get('conflicts', []))} conflicts")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to extract optimal game state: {e}")
+        raise GameInterfaceError(f"Optimal state extraction failed: {e}") from e
+
+
 def normalize_position(position: List[float], scale_factor: float = 100.0) -> Tuple[float, float]:
     """
     Normalize aircraft position coordinates.
@@ -546,3 +592,44 @@ def safe_get(dictionary: Dict[str, Any], key: str, default: Any = None) -> Any:
         Value from dictionary or default
     """
     return dictionary.get(key, default) if dictionary else default
+
+
+def get_device(device: Optional[str] = None) -> str:
+    """
+    Get the best available PyTorch device, supporting CUDA, Metal (MPS), and CPU.
+    
+    Priority order:
+    1. Explicitly provided device
+    2. CUDA (if available)
+    3. Metal/MPS (if available on Apple Silicon)
+    4. CPU (fallback)
+    
+    Args:
+        device: Optional device string (e.g., "cuda", "mps", "cpu"). 
+                If None, auto-detects the best available device.
+        
+    Returns:
+        Device string suitable for torch.device()
+        
+    Example:
+        >>> device = get_device()
+        >>> print(f"Using device: {device}")
+        >>> model = model.to(torch.device(device))
+    """
+    import torch
+    
+    # If device is explicitly provided, use it
+    if device is not None:
+        return device
+    
+    # Check CUDA availability (NVIDIA GPUs)
+    if torch.cuda.is_available():
+        return "cuda"
+    
+    # Check Metal availability (Apple Silicon GPUs)
+    # PyTorch uses "mps" as the device name for Metal
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    
+    # Fallback to CPU
+    return "cpu"

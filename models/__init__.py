@@ -19,6 +19,48 @@ from .config import (
 from .encoders import ATCTransformerEncoder, GlobalStateEncoder, AttentionPooling
 from .heads import PolicyHead, ValueHead, ActorCriticHeads
 
+# Hierarchical policy
+try:
+    from .hierarchical_policy import (
+        HierarchicalPolicy,
+        HierarchicalPolicyConfig,
+        HighLevelPolicyConfig,
+        LowLevelPolicyConfig,
+        create_hierarchical_policy,
+    )
+except ImportError:
+    pass
+
+# Multi-agent policy
+try:
+    from .multi_agent_policy import (
+        MultiAgentPolicy,
+        CommunicationModule,
+        LocalObservationEncoder,
+        DecentralizedActor,
+        CentralizedCritic,
+    )
+except ImportError:
+    pass
+
+# Decision Transformer
+try:
+    from .decision_transformer import (
+        DecisionTransformer,
+        MultiDiscreteDecisionTransformer,
+    )
+except ImportError:
+    pass
+
+# Trajectory Transformer
+try:
+    from .trajectory_transformer import (
+        TrajectoryTransformer,
+        TrajectoryTransformerConfig,
+    )
+except ImportError:
+    pass
+
 # Public API
 __all__ = [
     # Main model
@@ -45,6 +87,28 @@ __all__ = [
     "PolicyHead",
     "ValueHead",
     "ActorCriticHeads",
+    
+    # Hierarchical policy
+    "HierarchicalPolicy",
+    "HierarchicalPolicyConfig",
+    "HighLevelPolicyConfig",
+    "LowLevelPolicyConfig",
+    "create_hierarchical_policy",
+    
+    # Multi-agent policy
+    "MultiAgentPolicy",
+    "CommunicationModule",
+    "LocalObservationEncoder",
+    "DecentralizedActor",
+    "CentralizedCritic",
+    
+    # Decision Transformer
+    "DecisionTransformer",
+    "MultiDiscreteDecisionTransformer",
+    
+    # Trajectory Transformer
+    "TrajectoryTransformer",
+    "TrajectoryTransformerConfig",
 ]
 
 # Version info

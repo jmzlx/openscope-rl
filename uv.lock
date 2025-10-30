@@ -3025,6 +3025,7 @@ dependencies = [
     { name = "playwright" },
     { name = "pyyaml" },
     { name = "requests" },
+    { name = "sb3-contrib" },
     { name = "stable-baselines3", extra = ["extra"] },
     { name = "torch" },
     { name = "tqdm" },
@@ -3061,6 +3062,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
+    { name = "sb3-contrib", specifier = ">=2.0.0" },
     { name = "stable-baselines3", extras = ["extra"], specifier = ">=2.0.0" },
     { name = "torch", specifier = ">=2.0.0" },
     { name = "tqdm", specifier = ">=4.66.0" },
@@ -4246,6 +4248,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/73/e6/03b882225a1b0627e75339b420883dc3c90707a8917d2284abef7a58d317/ruff-0.14.0-py3-none-win32.whl", hash = "sha256:7450a243d7125d1c032cb4b93d9625dea46c8c42b4f06c6b709baac168e10543", size = 12367872, upload-time = "2025-10-07T18:21:46.67Z" },
     { url = "https://files.pythonhosted.org/packages/41/77/56cf9cf01ea0bfcc662de72540812e5ba8e9563f33ef3d37ab2174892c47/ruff-0.14.0-py3-none-win_amd64.whl", hash = "sha256:ea95da28cd874c4d9c922b39381cbd69cb7e7b49c21b8152b014bd4f52acddc2", size = 13464628, upload-time = "2025-10-07T18:21:50.318Z" },
     { url = "https://files.pythonhosted.org/packages/c6/2a/65880dfd0e13f7f13a775998f34703674a4554906167dce02daf7865b954/ruff-0.14.0-py3-none-win_arm64.whl", hash = "sha256:f42c9495f5c13ff841b1da4cb3c2a42075409592825dada7c5885c2c844ac730", size = 12565142, upload-time = "2025-10-07T18:21:53.577Z" },
+]
+
+[[package]]
+name = "sb3-contrib"
+version = "2.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "stable-baselines3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7e/23/2831ccecc8fc2fcda401804f3ed1dc3b81f7c4ad3cb32dc6b1cd79f91c49/sb3_contrib-2.7.0.tar.gz", hash = "sha256:87281ae64e6965e46ac24b58778241d2b07b29996044491267ed844c1a75acfe", size = 90289, upload-time = "2025-07-25T13:02:07.208Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b5/25/df1f407742dca9a649bedcf6f06e74f2306c7854c5ad730497b79e332b99/sb3_contrib-2.7.0-py3-none-any.whl", hash = "sha256:fc5b5cffc7908c7961a73daea8496f5bf2fe69301bc3e7ca71522549eb7feb77", size = 93173, upload-time = "2025-07-25T13:02:04.407Z" },
 ]
 
 [[package]]

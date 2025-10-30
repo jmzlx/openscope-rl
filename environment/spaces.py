@@ -69,7 +69,7 @@ def create_action_space(max_aircraft: int = MAX_AIRCRAFT_DEFAULT) -> spaces.Dict
         Dict space containing aircraft selection and command parameters
     """
     return spaces.Dict({
-        "aircraft_id": spaces.Discrete(max_aircraft + 1),  # +1 for "no action"
+        "aircraft_id": spaces.Discrete(max_aircraft + 1),  # 0 to (max_aircraft-1) are aircraft IDs, max_aircraft is "no action"
         "command_type": spaces.Discrete(COMMAND_TYPE_COUNT),
         "altitude": spaces.Discrete(ALTITUDE_LEVELS),
         "heading": spaces.Discrete(HEADING_CHANGES_COUNT),
@@ -207,7 +207,7 @@ def get_action_space_info(max_aircraft: int = MAX_AIRCRAFT_DEFAULT) -> Dict[str,
         "aircraft_id": {
             "min": 0,
             "max": max_aircraft,
-            "description": "Aircraft to control (0 = no action)"
+            "description": f"Aircraft to control (0 to {max_aircraft-1} = aircraft indices, {max_aircraft} = no action)"
         },
         "command_type": {
             "min": 0,

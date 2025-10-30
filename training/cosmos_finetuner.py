@@ -283,7 +283,8 @@ class CosmosFineTuner:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        from environment.utils import get_device
+        self.device = torch.device(get_device())
         logger.info(f"Using device: {self.device}")
 
         # Initialize model (placeholder - actual API may differ)

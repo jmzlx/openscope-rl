@@ -97,11 +97,19 @@ class OpenScopeInterface:
         
         aircraft_id = action["aircraft_id"]
         
-        # Check if valid aircraft ID
-        if aircraft_id >= len(aircraft_data):
-            logger.debug(f"No action taken: aircraft_id {aircraft_id} >= {len(aircraft_data)}")
+        # Check for "no action": aircraft_id == max_aircraft is the dedicated "no-op" action
+        # This allows the agent to explicitly choose to do nothing in a cycle
+        max_aircraft = self.config.max_aircraft
+        if aircraft_id == max_aircraft:
+            logger.debug(f"No action taken: aircraft_id {aircraft_id} (explicit no-op)")
             return None
         
+        # Safety check: also handle out-of-bounds as no-op (shouldn't happen with proper masking)
+        if aircraft_id < 0 or aircraft_id >= len(aircraft_data):
+            logger.debug(f"No action taken: aircraft_id {aircraft_id} (out of range [0, {len(aircraft_data)})")
+            return None
+        
+        # aircraft_id now valid: selects aircraft at that index
         aircraft = aircraft_data[aircraft_id]
         callsign = aircraft["callsign"]
         command_type = self.config.action_config.command_types[action["command_type"]]
@@ -151,11 +159,11 @@ class OpenScopeInterface:
             return f"{callsign} sp {spd}"
 
         elif command_type == CommandType.ILS:
-            target_runway = aircraft.get("targetRunway")
+            target_runway = aircraft.get("targetRunway") or aircraft.get("target_runway")
             if target_runway:
                 return f"{callsign} i {target_runway}"
             else:
-                logger.warning(f"No target runway for aircraft {callsign}")
+                logger.debug(f"No target runway for aircraft {callsign}, ILS command skipped")
                 return None
 
         elif command_type == CommandType.DIRECT:

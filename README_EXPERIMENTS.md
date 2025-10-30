@@ -23,7 +23,6 @@ A systematic framework for exploring **7 different machine learning approaches**
 ### 1. Read the Documentation
 - **START HERE**: [QUICK_START.md](QUICK_START.md) - Immediate next steps
 - **OVERVIEW**: [EXPERIMENT_ROADMAP.md](EXPERIMENT_ROADMAP.md) - Complete details
-- **SETUP**: [SETUP_COMPLETE.md](SETUP_COMPLETE.md) - What was built
 
 ### 2. Choose Your Approach
 
@@ -62,7 +61,6 @@ openscope-rl/
 ├── 📖 Documentation
 │   ├── QUICK_START.md              # ← Read this first
 │   ├── EXPERIMENT_ROADMAP.md       # Complete overview
-│   ├── SETUP_COMPLETE.md           # Setup summary
 │   └── README_EXPERIMENTS.md       # This file
 │
 ├── 🌳 Experimental Worktrees (.trees/)

@@ -187,10 +187,11 @@ class CosmosOpenScopeEnv(gym.Env):
         self.use_shadow_state = use_shadow_state
 
         # Device setup
+        from .utils import get_device
         if device is None:
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.device = torch.device(get_device())
         else:
-            self.device = torch.device(device)
+            self.device = torch.device(get_device(device))
 
         logger.info(f"CosmosOpenScopeEnv using device: {self.device}")
 

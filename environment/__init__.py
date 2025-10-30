@@ -24,6 +24,22 @@ from .exceptions import (
     ActionError,
     EpisodeError,
 )
+from .action_masking import (
+    get_action_mask,
+    create_action_mask_fn,
+    ActionMaskingWrapper,
+    get_invalid_action_stats,
+    print_action_mask_summary,
+)
+from .action_space_wrapper import DictToMultiDiscreteWrapper
+from .utils import get_device
+from .interface import (
+    ATCEnvironmentInterface,
+    ATCStateExtractor,
+    ATCCommandExecutor,
+    OpenScopeAdapter,
+    MockATCEnvironment,
+)
 
 # Public API
 __all__ = [
@@ -47,6 +63,26 @@ __all__ = [
     "ConfigurationError",
     "ActionError",
     "EpisodeError",
+    
+    # Action masking
+    "get_action_mask",
+    "create_action_mask_fn",
+    "ActionMaskingWrapper",
+    "get_invalid_action_stats",
+    "print_action_mask_summary",
+    
+    # Action space conversion
+    "DictToMultiDiscreteWrapper",
+    
+    # Utilities
+    "get_device",
+    
+    # Interface abstraction
+    "ATCEnvironmentInterface",
+    "ATCStateExtractor",
+    "ATCCommandExecutor",
+    "OpenScopeAdapter",
+    "MockATCEnvironment",
 ]
 
 # Version info
