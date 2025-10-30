@@ -116,7 +116,7 @@ def mock_page():
     """Create a mock Playwright page for testing."""
     page = MagicMock()
     
-    # Mock evaluate to return mock game state
+    # Mock evaluate to return mock game state (for state extraction)
     def mock_evaluate(script, arg=None):
         # Return mock game state structure
         return {
@@ -127,6 +127,9 @@ def mock_page():
         }
     
     page.evaluate = Mock(side_effect=mock_evaluate)
+    # Mock fill() and press() for command execution (Playwright native methods)
+    page.fill = Mock()
+    page.press = Mock()
     page.url = "http://localhost:3003"
     page.is_closed.return_value = False
     page.title.return_value = "OpenScope"

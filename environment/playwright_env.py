@@ -273,6 +273,8 @@ class PlaywrightEnv(gym.Env):
             
             # Inject time tracking script
             self.browser_manager.inject_time_tracking_script()
+            # Inject scoring event hook script
+            self.browser_manager.inject_event_hook_script()
             
             # Navigate to game
             self.browser_manager.navigate_to_game(self.config.game_url)

@@ -15,12 +15,7 @@ from playwright.async_api import async_playwright, Browser as AsyncBrowser, Page
 
 from .config import BrowserConfig
 from .exceptions import BrowserError, GameInterfaceError
-from .constants import (
-    JS_EXECUTE_COMMAND_SCRIPT,
-    JS_GET_GAME_STATE_SCRIPT,
-    JS_GET_ENHANCED_GAME_STATE_SCRIPT,
-    JS_GET_OPTIMAL_GAME_STATE_SCRIPT,
-)
+from .constants import JS_GET_OPTIMAL_GAME_STATE_SCRIPT
 
 
 logger = logging.getLogger(__name__)
@@ -107,6 +102,18 @@ class PageWrapper:
             return self._run_async(self._page.title())
         return self._page.title()
 
+    def fill(self, selector: str, value: str, **kwargs):
+        """Fill an input field."""
+        if self._is_async:
+            return self._run_async(self._page.fill(selector, value, **kwargs))
+        return self._page.fill(selector, value, **kwargs)
+    
+    def press(self, selector: str, key: str, **kwargs):
+        """Press a key on an element."""
+        if self._is_async:
+            return self._run_async(self._page.press(selector, key, **kwargs))
+        return self._page.press(selector, key, **kwargs)
+    
     def __getattr__(self, name):
         """Forward unknown attributes to the wrapped page."""
         return getattr(self._page, name)
@@ -261,6 +268,126 @@ class BrowserManager:
             logger.error(f"Failed to inject time tracking script: {e}")
             raise BrowserError(f"Script injection failed: {e}") from e
     
+    def inject_event_hook_script(self) -> None:
+        """
+        Inject JavaScript to hook OpenScope scoring events.
+
+        This patches GameController.events_recordNew to buffer all scoring
+        events in window._rlEventBuffer and exposes window._rlDrainEvents()
+        to retrieve and clear the buffer.
+        """
+        if not self.page:
+            raise BrowserError("Page not initialized")
+
+        script = """
+        (() => {
+          const wrapEventsRecordNew = (host) => {
+            if (!host || typeof host.events_recordNew !== 'function') return false;
+            if (!window._rlEventCounts) window._rlEventCounts = {};
+            if (!window._rlEventBuffer) window._rlEventBuffer = [];
+            if (!host._eventsRecordNewOriginal) {
+              try {
+                host._eventsRecordNewOriginal = host.events_recordNew.bind(host);
+                host.events_recordNew = (evt) => {
+                  try {
+                    window._rlEventCounts[evt] = (window._rlEventCounts[evt] || 0) + 1;
+                    window._rlEventBuffer.push({ event: evt, ts: Date.now() });
+                  } catch (e) {}
+                  return host._eventsRecordNewOriginal(evt);
+                };
+                return true;
+              } catch (e) {
+                return false;
+              }
+            }
+            return true;
+          };
+
+          const attach = () => {
+            try {
+              // Common locations (avoid array allocation + filter)
+              let wrappedAny = false;
+              const gc1 = window.gameController;
+              const gc2 = window.GameController;
+              const gc3 = (window.app && window.app.gameController);
+              if (gc1) wrappedAny = wrapEventsRecordNew(gc1) || wrappedAny;
+              if (gc2) wrappedAny = wrapEventsRecordNew(gc2) || wrappedAny;
+              if (gc3) wrappedAny = wrapEventsRecordNew(gc3) || wrappedAny;
+
+              // Fallback: scan shallow globals for an object with events_recordNew
+              const MAX_KEYS = 5000; // guardrail
+              let checked = 0;
+              for (const key in window) {
+                if (checked++ > MAX_KEYS) break;
+                try {
+                  const val = window[key];
+                  if (val && typeof val === 'object' && typeof val.events_recordNew === 'function') {
+                    if (wrapEventsRecordNew(val)) wrappedAny = true;
+                  }
+                } catch (e) {
+                  // ignore cross-origin or access errors
+                }
+              }
+
+              return wrappedAny;
+            } catch (e) {
+              return false;
+            }
+          };
+
+          // Intercept future assignments to gameController to ensure wrapping when it appears later
+          try {
+            if (!window.__rl_gc_wrapped) {
+              Object.defineProperty(window, 'gameController', {
+                configurable: true,
+                get() { return this.__rl_gc_val; },
+                set(v) {
+                  this.__rl_gc_val = v;
+                  try { wrapEventsRecordNew(v); } catch (e) {}
+                }
+              });
+              window.__rl_gc_wrapped = true;
+            }
+            if (window.app && !window.app.__rl_gc_wrapped) {
+              try {
+                Object.defineProperty(window.app, 'gameController', {
+                  configurable: true,
+                  get() { return this.__rl_gc_val; },
+                  set(v) {
+                    this.__rl_gc_val = v;
+                    try { wrapEventsRecordNew(v); } catch (e) {}
+                  }
+                });
+                window.app.__rl_gc_wrapped = true;
+              } catch (e) {}
+            }
+          } catch (e) {}
+
+          if (!window._rlDrainEvents) {
+            window._rlDrainEvents = () => {
+              const out = {
+                events: (window._rlEventBuffer || []).slice(),
+                counts: { ...(window._rlEventCounts || {}) }
+              };
+              if (window._rlEventBuffer) window._rlEventBuffer.length = 0;
+              return out;
+            };
+          }
+
+          if (!attach()) {
+            const id = setInterval(() => { if (attach()) clearInterval(id); }, 200);
+            setTimeout(() => clearInterval(id), 15000);
+          }
+        })();
+        """
+
+        try:
+            self.page.add_init_script(script)
+            logger.debug("Event hook script injected")
+        except Exception as e:
+            logger.error(f"Failed to inject event hook script: {e}")
+            raise BrowserError(f"Script injection failed: {e}") from e
+    
     def navigate_to_game(self, game_url: str) -> None:
         """
         Navigate to the OpenScope game URL.
@@ -377,10 +504,14 @@ class BrowserManager:
 
 def execute_command(page: Page, command: str) -> None:
     """
-    Execute a command in the OpenScope game using DOM manipulation.
+    Execute a command in the OpenScope game using Playwright's native methods.
+    
+    Uses Playwright's built-in fill() and press() methods which are more reliable
+    than custom JavaScript event dispatching. These methods properly trigger all
+    necessary DOM events and work correctly with frameworks like jQuery.
     
     Args:
-        page: Playwright page object
+        page: Playwright page object (supports both sync Page and PageWrapper)
         command: Command string to execute
         
     Raises:
@@ -390,7 +521,11 @@ def execute_command(page: Page, command: str) -> None:
         raise GameInterfaceError("Page not available")
     
     try:
-        page.evaluate(JS_EXECUTE_COMMAND_SCRIPT, command)
+        # Use Playwright's native methods for more reliable command execution
+        # fill() properly triggers input events and press() handles key events correctly
+        # Works with both sync Page and async PageWrapper
+        page.fill('#command', command)
+        page.press('#command', 'Enter')
         logger.debug(f"Executed command: {command}")
         
     except Exception as e:
@@ -400,13 +535,28 @@ def execute_command(page: Page, command: str) -> None:
 
 def extract_game_state(page: Page) -> Dict[str, Any]:
     """
-    Extract game state from OpenScope using JavaScript evaluation.
+    Extract complete game state from OpenScope.
+    
+    This is the primary state extraction function for the environment. It extracts:
+    - The 14 core features per aircraft needed by StateProcessor (position, altitude, heading, etc.)
+    - Additional ATC-critical data: wind components, flight phase, waypoints, flight plan,
+      approach clearance status, and landing status
+    - Global state: score, time, number of aircraft
+    - Conflicts: distance, altitude separation, violation status
+    - Scoring events: captured via injected event hook (events, event_counts)
     
     Args:
         page: Playwright page object
         
     Returns:
-        Dict containing aircraft data, conflicts, score, and time
+        Dict containing:
+            - aircraft: List of aircraft with full state
+            - conflicts: List of active conflicts/violations
+            - score: Current game score
+            - time: Game time in seconds
+            - numAircraft: Number of active aircraft
+            - events: List of recent scoring events (if event hook is active)
+            - event_counts: Cumulative counts of each event type (if event hook is active)
         
     Raises:
         GameInterfaceError: If state extraction fails
@@ -415,7 +565,15 @@ def extract_game_state(page: Page) -> Dict[str, Any]:
         raise GameInterfaceError("Page not available")
     
     try:
-        result = page.evaluate(JS_GET_GAME_STATE_SCRIPT)
+        result = page.evaluate(JS_GET_OPTIMAL_GAME_STATE_SCRIPT)
+        # Drain any buffered scoring events if hook is present
+        try:
+            drain = page.evaluate("() => window._rlDrainEvents ? window._rlDrainEvents() : null")
+            if isinstance(result, dict) and drain:
+                result["events"] = drain.get("events", [])
+                result["event_counts"] = drain.get("counts", {})
+        except Exception:
+            pass
         
         if result is None:
             logger.warning("Game state extraction returned null")
@@ -431,78 +589,8 @@ def extract_game_state(page: Page) -> Dict[str, Any]:
         raise GameInterfaceError(f"State extraction failed: {e}") from e
 
 
-def extract_enhanced_game_state(page: Page) -> Dict[str, Any]:
-    """
-    Extract enhanced game state from OpenScope with additional properties.
-    
-    Args:
-        page: Playwright page object
-        
-    Returns:
-        Dict containing enhanced aircraft data, conflicts, score, time, and weather
-        
-    Raises:
-        GameInterfaceError: If state extraction fails
-    """
-    if not page:
-        raise GameInterfaceError("Page not available")
-    
-    try:
-        result = page.evaluate(JS_GET_ENHANCED_GAME_STATE_SCRIPT)
-        
-        if result is None:
-            logger.warning("Enhanced game state extraction returned null")
-            return {}
-        
-        logger.debug(f"Extracted enhanced state: {len(result.get('aircraft', []))} aircraft, "
-                    f"{len(result.get('conflicts', []))} conflicts")
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"Failed to extract enhanced game state: {e}")
-        raise GameInterfaceError(f"Enhanced state extraction failed: {e}") from e
-
-
-def extract_optimal_game_state(page: Page) -> Dict[str, Any]:
-    """
-    Extract optimal game state from OpenScope with required features plus ATC-critical data.
-    
-    This function extracts:
-    - The 14 core features per aircraft needed by StateProcessor (position, altitude, heading, etc.)
-    - Additional ATC-critical data: wind components, flight phase, waypoints, flight plan,
-      approach clearance status, and landing status
-    
-    Provides maximum efficiency for production training data collection while including
-    all information needed for real ATC decision-making.
-    
-    Args:
-        page: Playwright page object
-        
-    Returns:
-        Dict containing optimal aircraft data (with extended fields), conflicts, score, and time
-        
-    Raises:
-        GameInterfaceError: If state extraction fails
-    """
-    if not page:
-        raise GameInterfaceError("Page not available")
-    
-    try:
-        result = page.evaluate(JS_GET_OPTIMAL_GAME_STATE_SCRIPT)
-        
-        if result is None:
-            logger.warning("Optimal game state extraction returned null")
-            return {}
-        
-        logger.debug(f"Extracted optimal state: {len(result.get('aircraft', []))} aircraft, "
-                    f"{len(result.get('conflicts', []))} conflicts")
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"Failed to extract optimal game state: {e}")
-        raise GameInterfaceError(f"Optimal state extraction failed: {e}") from e
+# Backwards compatibility alias
+extract_optimal_game_state = extract_game_state
 
 
 def normalize_position(position: List[float], scale_factor: float = 100.0) -> Tuple[float, float]:

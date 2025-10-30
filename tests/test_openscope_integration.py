@@ -108,8 +108,9 @@ class TestGameInterface:
         interface.initialize(mock_page)
         
         assert interface.is_initialized
-        # Verify setup commands were executed via mock
-        assert mock_page.evaluate.called
+        # Verify setup commands were executed using Playwright's fill() and press()
+        assert mock_page.fill.called
+        assert mock_page.press.called
     
     def test_execute_action_no_op(self, default_config, mock_page):
         """Test executing a no-op action."""
@@ -146,13 +147,13 @@ class TestGameInterface:
             "speed": 0,
         }
         
-        # Mock the evaluate to track commands
-        command_executed = []
-        def capture_command(script, arg=None):
-            if arg:
-                command_executed.append(arg)
+        # Track command execution using fill() and press()
+        command_filled = []
+        def capture_fill(selector, value):
+            if selector == '#command':
+                command_filled.append(value)
         
-        mock_page.evaluate = Mock(side_effect=capture_command)
+        mock_page.fill = Mock(side_effect=capture_fill)
         
         result = interface.execute_action(action, aircraft_data)
         
@@ -160,6 +161,10 @@ class TestGameInterface:
         assert result is not None
         assert "UAL123" in result
         assert "c" in result
+        # Verify command was filled and Enter was pressed
+        assert mock_page.fill.called
+        assert mock_page.press.called
+        assert any("UAL123" in cmd for cmd in command_filled)
     
     def test_get_game_state(self, default_config, mock_page):
         """Test getting game state."""
@@ -187,8 +192,9 @@ class TestGameInterface:
         
         interface.reset_game()
         
-        # Should call clear and re-setup
-        assert mock_page.evaluate.called
+        # Should call clear and re-setup using fill() and press()
+        assert mock_page.fill.called
+        assert mock_page.press.called
     
     def test_is_game_ready(self, default_config, mock_page):
         """Test game readiness check."""
@@ -262,4 +268,112 @@ class TestOpenScopeIntegration:
         assert env.config.timewarp == test_config["timewarp"]
         
         env.close()
+    
+    def test_event_detection_and_scoring(self):
+        """Test that all scoring events are detected and match the actual score.
+        
+        This test verifies:
+        1. Event hook is properly installed and captures events
+        2. All event types that affect score are being tracked
+        3. Calculated score from events matches actual game score
+        
+        This is critical for reward calculation accuracy in RL training.
+        """
+        from environment import PlaywrightEnv
+        from environment.constants import GAME_EVENT_SCORES
+        from environment.utils import extract_optimal_game_state
+        import time
+        
+        env = PlaywrightEnv(
+            game_url="http://localhost:3003",
+            airport="KLAS",
+            max_aircraft=15,
+            timewarp=1000,  # High timewarp to generate many events quickly
+            headless=True,
+            episode_length=300,
+        )
+        
+        try:
+            # Reset environment to initialize
+            obs, info = env.reset()
+            page = env.browser_manager.page
+            
+            # Check that event hook is installed
+            hook_status = page.evaluate("""() => ({
+                hookInstalled: !!window._rlDrainEvents,
+                gcExists: !!window.gameController,
+                gcWrapped: !!(window.gameController && window.gameController._eventsRecordNewOriginal),
+            })""")
+            
+            assert hook_status["hookInstalled"], "Event hook not installed (_rlDrainEvents missing)"
+            assert hook_status["gcExists"], "GameController not exposed on window"
+            assert hook_status["gcWrapped"], "GameController.events_recordNew not wrapped"
+            
+            # Get initial score
+            initial_state = extract_optimal_game_state(page)
+            initial_score = initial_state.get("score", 0)
+            
+            # Let the game run for 20 seconds (simulated time: ~5.5 hours at 1000x)
+            # This should generate multiple events (arrivals, departures, etc.)
+            time.sleep(20)
+            
+            # Extract final state with events
+            final_state = extract_optimal_game_state(page)
+            final_score = final_state.get("score", 0)
+            event_counts = final_state.get("event_counts", {})
+            
+            # Verify we captured events
+            assert event_counts, "No events captured during test"
+            assert len(event_counts) > 0, "Event counts dictionary is empty"
+            
+            # Calculate expected score change from events
+            calculated_score_change = 0
+            for event_type, count in event_counts.items():
+                if event_type in GAME_EVENT_SCORES:
+                    points_per_event = GAME_EVENT_SCORES[event_type]
+                    calculated_score_change += points_per_event * count
+                else:
+                    # Warn about unknown event types
+                    print(f"Warning: Unknown event type '{event_type}' not in GAME_EVENT_SCORES")
+            
+            actual_score_change = final_score - initial_score
+            
+            # Print diagnostic info
+            print(f"\n=== Event Detection Test Results ===")
+            print(f"Initial score: {initial_score}")
+            print(f"Final score: {final_score}")
+            print(f"Actual score change: {actual_score_change}")
+            print(f"Calculated score change from events: {calculated_score_change}")
+            print(f"\nEvent counts:")
+            for event_type, count in sorted(event_counts.items(), key=lambda x: -x[1]):
+                points = GAME_EVENT_SCORES.get(event_type, 0)
+                total_points = points * count
+                print(f"  {event_type:35s}: {count:4d} × {points:5d} = {total_points:7d} pts")
+            print(f"\nScore match: {'✓ PASS' if abs(actual_score_change - calculated_score_change) < 10 else '✗ FAIL'}")
+            
+            # Assert that calculated score matches actual score
+            # Allow small tolerance for timing/rounding issues
+            score_tolerance = 10  # Allow ±10 points difference
+            assert abs(actual_score_change - calculated_score_change) <= score_tolerance, \
+                f"Score mismatch: actual change={actual_score_change}, " \
+                f"calculated from events={calculated_score_change}, " \
+                f"difference={abs(actual_score_change - calculated_score_change)}"
+            
+            # Verify we're tracking major event types
+            # At minimum, we expect departures and arrivals in a busy airport
+            expected_event_types = {'ARRIVAL', 'DEPARTURE'}
+            captured_event_types = set(event_counts.keys())
+            common_events = expected_event_types & captured_event_types
+            
+            assert len(common_events) > 0, \
+                f"Expected to capture at least one of {expected_event_types}, " \
+                f"but only captured {captured_event_types}"
+            
+            print(f"\n✅ Event detection test PASSED")
+            print(f"   - Hook properly installed and wrapping events_recordNew")
+            print(f"   - Captured {len(event_counts)} different event types")
+            print(f"   - Score calculation matches actual score (±{score_tolerance} pts)")
+            
+        finally:
+            env.close()
 

@@ -40,6 +40,7 @@ from .interface import (
     OpenScopeAdapter,
     MockATCEnvironment,
 )
+from .constants import GAME_EVENT_SCORES
 
 # Public API
 __all__ = [
@@ -83,6 +84,9 @@ __all__ = [
     "ATCCommandExecutor",
     "OpenScopeAdapter",
     "MockATCEnvironment",
+    
+    # Constants
+    "GAME_EVENT_SCORES",
 ]
 
 # Version info

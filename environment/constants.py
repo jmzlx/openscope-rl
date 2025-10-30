@@ -99,6 +99,25 @@ MAX_GROUND_SPEED = 600.0
 MIN_SCORE_THRESHOLD = -2000
 MAX_STEPS_THRESHOLD = 1000
 
+# OpenScope scoring events and their point values
+# Must match GAME_EVENTS_POINT_VALUES from OpenScope's GameController.js
+GAME_EVENT_SCORES = {
+    'AIRSPACE_BUST': -200,
+    'ARRIVAL': 10,
+    'COLLISION': -1000,
+    'DEPARTURE': 10,
+    'EXTREME_CROSSWIND_OPERATION': -15,
+    'EXTREME_TAILWIND_OPERATION': -75,
+    'GO_AROUND': -50,
+    'HIGH_CROSSWIND_OPERATION': -5,
+    'HIGH_TAILWIND_OPERATION': -25,
+    'ILLEGAL_APPROACH_CLEARANCE': -10,
+    'LOCALIZER_INTERCEPT_ABOVE_GLIDESLOPE': -10,
+    'NOT_CLEARED_ON_ROUTE': -25,
+    'SEPARATION_LOSS': -200,
+    'NO_TAKEOFF_SEPARATION': -200
+}
+
 # Logging
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_LEVEL = "INFO"
@@ -108,189 +127,48 @@ JS_EXECUTE_COMMAND_SCRIPT = """
 (command) => {
     const input = document.querySelector('#command');
     if (input) {
+        // Set the command value
         input.value = command;
-        input.dispatchEvent(new KeyboardEvent('keydown', {
-            key: 'Enter', code: 'Enter', keyCode: 13
-        }));
+        
+        // Focus the input to ensure it's active
+        input.focus();
+        
+        // Trigger input event to notify any listeners about the value change
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        
+        // Dispatch Enter key event on the window (where jQuery listeners are attached)
+        // This matches how OpenScope's InputController listens for keydown events
+        const enterEvent = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true,
+            cancelable: true
+        });
+        
+        // Dispatch on window so jQuery listeners can catch it
+        window.dispatchEvent(enterEvent);
+        
+        // Also try dispatching on the input as fallback
+        input.dispatchEvent(enterEvent);
+        
+        // Some browsers/apps need keypress or keyup as well
+        const enterPressEvent = new KeyboardEvent('keypress', {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true,
+            cancelable: true
+        });
+        window.dispatchEvent(enterPressEvent);
+        input.dispatchEvent(enterPressEvent);
     }
 }
 """
 
-JS_GET_GAME_STATE_SCRIPT = """
-(function() {
-    if (!window.aircraftController) return null;
-
-    const aircraft = [];
-    for (const ac of window.aircraftController.aircraft.list) {
-        aircraft.push({
-            callsign: ac.callsign,
-            position: ac.relativePosition,
-            altitude: ac.altitude,
-            heading: ac.heading,
-            speed: ac.speed,
-            groundSpeed: ac.groundSpeed,
-            assignedAltitude: ac.mcp.altitude,
-            assignedHeading: ac.mcp.heading,
-            assignedSpeed: ac.mcp.speed,
-            category: ac.category,
-            isOnGround: ac.isOnGround(),
-            isTaxiing: ac.isTaxiing(),
-            isEstablished: ac.isEstablishedOnCourse ? ac.isEstablishedOnCourse() : false,
-            targetRunway: ac.fms && ac.fms.arrivalRunwayModel ? ac.fms.arrivalRunwayModel.name : null,
-        });
-    }
-
-    const conflicts = [];
-    if (window.aircraftController.conflicts) {
-        window.aircraftController.conflicts.forEach(c => {
-            conflicts.push({
-                aircraft1: c.aircraft[0].callsign,
-                aircraft2: c.aircraft[1].callsign,
-                distance: c.distance,
-                altitude: c.altitude,
-                hasConflict: c.hasConflict(),
-                hasViolation: c.hasViolation()
-            });
-        });
-    }
-
-    // Get game time
-    let gameTime = 0;
-    if (window._getRLGameTime) {
-        try { gameTime = window._getRLGameTime(); } catch (e) {}
-    }
-
-    // Get score from DOM (OpenScope doesn't expose gameController anymore)
-    const scoreElement = document.querySelector('#score');
-    const score = scoreElement ? (parseInt(scoreElement.textContent) || 0) : 0;
-
-    return {
-        aircraft: aircraft,
-        conflicts: conflicts,
-        score: score,
-        time: gameTime,
-        numAircraft: aircraft.length
-    };
-})();
-"""
-
-JS_GET_ENHANCED_GAME_STATE_SCRIPT = """
-(function() {
-    if (!window.aircraftController) return null;
-
-    const aircraft = [];
-    for (const ac of window.aircraftController.aircraft.list) {
-        const aircraftData = {
-            // Basic properties
-            callsign: ac.callsign,
-            position: ac.relativePosition,
-            altitude: ac.altitude,
-            heading: ac.heading,
-            speed: ac.speed,
-            groundSpeed: ac.groundSpeed,
-            assignedAltitude: ac.mcp.altitude,
-            assignedHeading: ac.mcp.heading,
-            assignedSpeed: ac.mcp.speed,
-            category: ac.category,
-            isOnGround: ac.isOnGround(),
-            isTaxiing: ac.isTaxiing(),
-            
-            // Additional properties
-            isEstablished: ac.isEstablishedOnCourse ? ac.isEstablishedOnCourse() : false,
-            targetRunway: ac.fms.arrivalRunwayModel ? ac.fms.arrivalRunwayModel.name : null,
-            
-            // Try to get additional properties if they exist
-            verticalSpeed: ac.verticalSpeed || null,
-            flightPhase: ac.flightPhase || null,
-            squawk: ac.squawk || null,
-            pitch: ac.pitch || null,
-            roll: ac.roll || null,
-            yaw: ac.yaw || null,
-            mach: ac.mach || null,
-            trueAirspeed: ac.trueAirspeed || null,
-            calibratedAirspeed: ac.calibratedAirspeed || null,
-            groundTrack: ac.groundTrack || null,
-            course: ac.course || null,
-            track: ac.track || null,
-            bearing: ac.bearing || null,
-            
-            // Wind-related properties (if available)
-            windSpeed: ac.windSpeed || null,
-            windDirection: ac.windDirection || null,
-            headwind: ac.headwind || null,
-            tailwind: ac.tailwind || null,
-            crosswind: ac.crosswind || null,
-            
-            // Position properties
-            absolutePosition: ac.absolutePosition || null,
-            lat: ac.lat || null,
-            lon: ac.lon || null,
-            latitude: ac.latitude || null,
-            longitude: ac.longitude || null,
-            
-            // Additional useful properties
-            distanceToRunway: ac.distanceToRunway || null,
-            timeToRunway: ac.timeToRunway || null,
-            eta: ac.eta || null,
-            fuel: ac.fuel || null,
-            weight: ac.weight || null,
-            mass: ac.mass || null,
-            
-            // FMS/Flight plan data
-            flightPlan: ac.fms ? {
-                waypoints: ac.fms.waypoints ? ac.fms.waypoints.map(wp => ({
-                    name: wp.name,
-                    position: wp.position,
-                    altitude: wp.altitude
-                })) : null,
-                currentWaypoint: ac.fms.currentWaypoint ? ac.fms.currentWaypoint.name : null,
-                nextWaypoint: ac.fms.nextWaypoint ? ac.fms.nextWaypoint.name : null
-            } : null
-        };
-        
-        aircraft.push(aircraftData);
-    }
-
-    const conflicts = [];
-    if (window.aircraftController.conflicts) {
-        window.aircraftController.conflicts.forEach(c => {
-            conflicts.push({
-                aircraft1: c.aircraft[0].callsign,
-                aircraft2: c.aircraft[1].callsign,
-                distance: c.distance,
-                altitude: c.altitude,
-                hasConflict: c.hasConflict(),
-                hasViolation: c.hasViolation()
-            });
-        });
-    }
-
-    // Get game time
-    let gameTime = 0;
-    if (window._getRLGameTime) {
-        try { gameTime = window._getRLGameTime(); } catch (e) {}
-    }
-
-    // Get score from DOM (OpenScope doesn't expose gameController anymore)
-    const scoreElement = document.querySelector('#score');
-    const score = scoreElement ? (parseInt(scoreElement.textContent) || 0) : 0;
-
-    // Note: Weather data may not be available without gameController
-    // This would need to be accessed through DOM or other means if needed
-    const weather = {};
-
-    return {
-        aircraft: aircraft,
-        conflicts: conflicts,
-        score: score,
-        time: gameTime,
-        weather: weather,
-        numAircraft: aircraft.length
-    };
-})();
-"""
-
-# Optimal extraction script - extracts the 14 required features per aircraft plus
+# Game state extraction script - extracts the 14 required features per aircraft plus
 # additional ATC-critical data for maximum efficiency in production training data collection
 JS_GET_OPTIMAL_GAME_STATE_SCRIPT = """
 (function() {

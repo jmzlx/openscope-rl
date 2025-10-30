@@ -9,6 +9,7 @@ Tests for OpenScope integration:
 - Browser management (initialization, navigation, cleanup)
 - Game interface (command execution, state extraction)
 - Full environment integration (requires OpenScope server)
+- **Event detection and scoring validation** - Verifies that all scoring events are captured and score calculation is accurate
 
 ### `test_data_extraction.py`
 Tests for data extraction and processing:
@@ -72,6 +73,29 @@ pytest tests/ --cov=environment --cov=models
 - Test component interactions
 - Some tests require OpenScope server (marked with `@pytest.mark.skip`)
 - May require browser installation
+
+### Event Detection Test
+The `test_event_detection_and_scoring` test is critical for RL training accuracy:
+- **Purpose**: Validates that all OpenScope scoring events are captured
+- **Validation**: Compares calculated score from events against actual game score
+- **Requirements**: OpenScope server running at localhost:3003
+- **Duration**: ~25 seconds (includes 20s high-speed simulation)
+- **Events tested**: All 14 OpenScope event types (ARRIVAL, DEPARTURE, COLLISION, AIRSPACE_BUST, etc.)
+
+To run this test:
+```bash
+# Start OpenScope server first
+cd ../openscope && npm run start
+
+# Run the event detection test
+pytest tests/test_openscope_integration.py::TestOpenScopeIntegration::test_event_detection_and_scoring -v -s
+```
+
+The test will output:
+- Initial and final scores
+- All captured event types and counts
+- Calculated vs actual score comparison
+- Pass/fail status with detailed breakdown
 
 ### Manual Tests
 Tests marked with `@pytest.mark.skip(reason="Requires OpenScope server")` should be run manually:
