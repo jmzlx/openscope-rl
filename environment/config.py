@@ -31,12 +31,12 @@ class RewardConfig:
     
     # Base rewards
     timestep_penalty: float = -0.01
-    action_reward: float = 0.05
+    action_reward: float = 0.0
     
     # Safety rewards
     separation_loss: float = -200.0
     conflict_warning: float = -2.0
-    safe_separation_bonus: float = 0.05
+    safe_separation_bonus: float = 0.02
     
     # Performance rewards
     successful_exit_bonus: float = 100.0

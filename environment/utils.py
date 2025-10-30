@@ -281,103 +281,106 @@ class BrowserManager:
 
         script = """
         (() => {
-          const wrapEventsRecordNew = (host) => {
-            if (!host || typeof host.events_recordNew !== 'function') return false;
+          const wrappedControllers = new WeakSet();
+
+          const ensureBuffers = () => {
             if (!window._rlEventCounts) window._rlEventCounts = {};
             if (!window._rlEventBuffer) window._rlEventBuffer = [];
-            if (!host._eventsRecordNewOriginal) {
-              try {
-                host._eventsRecordNewOriginal = host.events_recordNew.bind(host);
-                host.events_recordNew = (evt) => {
-                  try {
-                    window._rlEventCounts[evt] = (window._rlEventCounts[evt] || 0) + 1;
-                    window._rlEventBuffer.push({ event: evt, ts: Date.now() });
-                  } catch (e) {}
-                  return host._eventsRecordNewOriginal(evt);
-                };
-                return true;
-              } catch (e) {
-                return false;
-              }
-            }
-            return true;
           };
 
-          const attach = () => {
+          const wrapController = (controller) => {
+            if (!controller || wrappedControllers.has(controller)) return false;
+            if (typeof controller.events_recordNew !== 'function') return false;
+
             try {
-              // Common locations (avoid array allocation + filter)
-              let wrappedAny = false;
-              const gc1 = window.gameController;
-              const gc2 = window.GameController;
-              const gc3 = (window.app && window.app.gameController);
-              if (gc1) wrappedAny = wrapEventsRecordNew(gc1) || wrappedAny;
-              if (gc2) wrappedAny = wrapEventsRecordNew(gc2) || wrappedAny;
-              if (gc3) wrappedAny = wrapEventsRecordNew(gc3) || wrappedAny;
-
-              // Fallback: scan shallow globals for an object with events_recordNew
-              const MAX_KEYS = 5000; // guardrail
-              let checked = 0;
-              for (const key in window) {
-                if (checked++ > MAX_KEYS) break;
+              const original = controller.events_recordNew;
+              controller._rlEventsRecordNewOriginal = original;
+              controller.events_recordNew = function patchedEventsRecordNew(evt) {
                 try {
-                  const val = window[key];
-                  if (val && typeof val === 'object' && typeof val.events_recordNew === 'function') {
-                    if (wrapEventsRecordNew(val)) wrappedAny = true;
-                  }
-                } catch (e) {
-                  // ignore cross-origin or access errors
+                  ensureBuffers();
+                  window._rlEventCounts[evt] = (window._rlEventCounts[evt] || 0) + 1;
+                  window._rlEventBuffer.push({ event: evt, ts: Date.now() });
+                } catch (bufferErr) {
+                  // ignore buffering failures, still forward to original handler
                 }
-              }
-
-              return wrappedAny;
-            } catch (e) {
+                return original.call(this, evt);
+              };
+              wrappedControllers.add(controller);
+              return true;
+            } catch (wrapErr) {
               return false;
             }
           };
 
-          // Intercept future assignments to gameController to ensure wrapping when it appears later
-          try {
-            if (!window.__rl_gc_wrapped) {
-              Object.defineProperty(window, 'gameController', {
-                configurable: true,
-                get() { return this.__rl_gc_val; },
-                set(v) {
-                  this.__rl_gc_val = v;
-                  try { wrapEventsRecordNew(v); } catch (e) {}
-                }
-              });
-              window.__rl_gc_wrapped = true;
+          const tryWrap = (candidate) => {
+            if (!candidate) return false;
+            if (Array.isArray(candidate)) {
+              return candidate.reduce((acc, item) => wrapController(item) || acc, false);
             }
-            if (window.app && !window.app.__rl_gc_wrapped) {
-              try {
-                Object.defineProperty(window.app, 'gameController', {
-                  configurable: true,
-                  get() { return this.__rl_gc_val; },
-                  set(v) {
-                    this.__rl_gc_val = v;
-                    try { wrapEventsRecordNew(v); } catch (e) {}
-                  }
-                });
-                window.app.__rl_gc_wrapped = true;
-              } catch (e) {}
+            return wrapController(candidate);
+          };
+
+          const probeSources = () => {
+            let wrappedAny = false;
+            try { wrappedAny = tryWrap(window.gameController) || wrappedAny; } catch (e) {}
+            try { wrappedAny = tryWrap(window.app && window.app.gameController) || wrappedAny; } catch (e) {}
+            try {
+              if (window.GameController && typeof window.GameController === 'object') {
+                wrappedAny = tryWrap(window.GameController.instance || window.GameController) || wrappedAny;
+              }
+            } catch (e) {}
+            return wrappedAny;
+          };
+
+          const hookProperty = (host, prop) => {
+            if (!host) return;
+            const descriptor = Object.getOwnPropertyDescriptor(host, prop);
+            if (descriptor && descriptor.configurable === false) {
+              // non-configurable property, fallback to polling
+              return;
             }
-          } catch (e) {}
+
+            let current = host[prop];
+            Object.defineProperty(host, prop, {
+              configurable: true,
+              get() { return current; },
+              set(value) {
+                current = value;
+                tryWrap(value);
+              }
+            });
+
+            tryWrap(current);
+          };
+
+          ensureBuffers();
+          probeSources();
+          hookProperty(window, 'gameController');
+          if (window.app) {
+            hookProperty(window.app, 'gameController');
+          }
 
           if (!window._rlDrainEvents) {
             window._rlDrainEvents = () => {
+              ensureBuffers();
               const out = {
-                events: (window._rlEventBuffer || []).slice(),
-                counts: { ...(window._rlEventCounts || {}) }
+                events: window._rlEventBuffer.slice(),
+                counts: { ...window._rlEventCounts }
               };
-              if (window._rlEventBuffer) window._rlEventBuffer.length = 0;
+              window._rlEventBuffer.length = 0;
               return out;
             };
           }
 
-          if (!attach()) {
-            const id = setInterval(() => { if (attach()) clearInterval(id); }, 200);
-            setTimeout(() => clearInterval(id), 15000);
-          }
+          const pollingInterval = setInterval(() => {
+            const wrapped = probeSources();
+            if (wrappedControllers.size > 0 && wrapped) {
+              clearInterval(pollingInterval);
+              clearTimeout(stopPollingTimer);
+            }
+          }, 250);
+
+          const stopPollingTimer = setTimeout(() => clearInterval(pollingInterval), 15000);
         })();
         """
 

@@ -96,6 +96,9 @@ class PlaywrightEnv(gym.Env):
             # Initialize components
             self._init_components(reward_strategy)
             
+            # Track browser state separately so we can reuse the same instance between episodes
+            self._is_initialized = False
+            
             # Initialize episode state
             self._init_episode_state()
             
@@ -135,7 +138,6 @@ class PlaywrightEnv(gym.Env):
         self.simulated_time = 0.0
         self.prev_state: Dict[str, Any] = {}
         self.step_start_time: Optional[float] = None
-        self._is_initialized = False
     
     def reset(
         self, 
@@ -160,8 +162,10 @@ class PlaywrightEnv(gym.Env):
         try:
             logger.info("Resetting environment")
             
-            # Initialize browser if needed
-            if not self._is_initialized:
+            # Initialize browser if needed (or if the previous one was cleaned up)
+            if (not self._is_initialized or
+                not self.browser_manager.is_initialized or
+                not self.game_interface.is_initialized):
                 self._initialize_browser()
             
             # Reset game
@@ -353,7 +357,7 @@ class PlaywrightEnv(gym.Env):
     def _prepare_info(self, state: Dict[str, Any], command: Optional[str], 
                      action: Dict[str, int], step_time: float) -> Dict[str, Any]:
         """Prepare info dictionary for step return."""
-        return {
+        info = {
             "raw_state": state,
             "score": state.get("score", 0),
             "aircraft_count": len(state.get("aircraft", [])),
@@ -365,6 +369,23 @@ class PlaywrightEnv(gym.Env):
             "simulated_time": self.simulated_time,
             "current_step": self.current_step,
         }
+
+        # Expose top-level fields expected by experiments/metrics.py
+        em = info["episode_metrics"]
+        info.update({
+            "successful_exits": em.get("successful_exits", 0),
+            "failed_exits": em.get("failed_exits", 0),
+            "total_aircraft_spawned": em.get("total_aircraft_spawned", 0),
+            "separations_lost": em.get("violations", 0),
+            "collided_aircraft": 0,  # not currently tracked; placeholder
+            "total_commands": em.get("commands_issued", 0),
+            "avg_exit_time": 0.0,  # not available; placeholder
+            "num_aircraft": em.get("max_aircraft", info.get("aircraft_count", 0)),
+            "total_reward": em.get("episode_reward", 0.0),
+            "step": em.get("episode_length", self.current_step),
+        })
+
+        return info
     
     def render(self) -> None:
         """
