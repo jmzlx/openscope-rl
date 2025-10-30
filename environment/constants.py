@@ -5,31 +5,11 @@ This module defines all constants used throughout the environment,
 including observation dimensions, action mappings, and game parameters.
 """
 
-from enum import Enum
 from typing import List
+from .config import CommandType
 
 
-class CommandType(Enum):
-    """Available command types for aircraft."""
-    ALTITUDE = "altitude"
-    HEADING = "heading"
-    SPEED = "speed"
-    ILS = "ils"
-    DIRECT = "direct"
-
-
-class AircraftCategory(Enum):
-    """Aircraft categories."""
-    ARRIVAL = "arrival"
-    DEPARTURE = "departure"
-
-
-class GameState(Enum):
-    """Game state indicators."""
-    RUNNING = "running"
-    PAUSED = "paused"
-    STOPPED = "stopped"
-    ERROR = "error"
+ 
 
 
 # Observation space dimensions

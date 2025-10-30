@@ -236,7 +236,7 @@ def validate_config(config: OpenScopeConfig) -> bool:
         raise ValueError("airport must be a 4-character ICAO code")
     
     # Validate timewarp
-    if config.timewarp < 1 or config.timewarp > 20:
-        raise ValueError("timewarp must be between 1 and 20")
+    if config.timewarp < 1 or config.timewarp > 2000:
+        raise ValueError("timewarp must be between 1 and 2000")
     
     return True

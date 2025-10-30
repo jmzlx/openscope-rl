@@ -569,9 +569,12 @@ def extract_game_state(page: Page) -> Dict[str, Any]:
         # Drain any buffered scoring events if hook is present
         try:
             drain = page.evaluate("() => window._rlDrainEvents ? window._rlDrainEvents() : null")
-            if isinstance(result, dict) and drain:
-                result["events"] = drain.get("events", [])
-                result["event_counts"] = drain.get("counts", {})
+            if isinstance(result, dict) and isinstance(drain, dict):
+                events = drain.get("events") or []
+                counts = drain.get("counts") or {}
+                if events or counts:
+                    result["events"] = events
+                    result["event_counts"] = counts
         except Exception:
             pass
         
@@ -593,93 +596,7 @@ def extract_game_state(page: Page) -> Dict[str, Any]:
 extract_optimal_game_state = extract_game_state
 
 
-def normalize_position(position: List[float], scale_factor: float = 100.0) -> Tuple[float, float]:
-    """
-    Normalize aircraft position coordinates.
-    
-    Args:
-        position: Raw position [x, y]
-        scale_factor: Scaling factor for normalization
-        
-    Returns:
-        Tuple of normalized (x, y) coordinates
-    """
-    if not position or len(position) < 2:
-        return 0.0, 0.0
-    
-    return position[0] / scale_factor, position[1] / scale_factor
-
-
-def normalize_angle(angle: float, max_angle: float = 360.0) -> float:
-    """
-    Normalize angle to [0, 1] range.
-    
-    Args:
-        angle: Angle in degrees
-        max_angle: Maximum angle value
-        
-    Returns:
-        Normalized angle in [0, 1] range
-    """
-    return (angle % max_angle) / max_angle
-
-
-def normalize_speed(speed: float, max_speed: float = 500.0) -> float:
-    """
-    Normalize speed to [0, 1] range.
-    
-    Args:
-        speed: Speed value
-        max_speed: Maximum speed for normalization
-        
-    Returns:
-        Normalized speed in [0, 1] range
-    """
-    return min(speed / max_speed, 1.0)
-
-
-def normalize_altitude(altitude: float, max_altitude: float = 50000.0) -> float:
-    """
-    Normalize altitude to [0, 1] range.
-    
-    Args:
-        altitude: Altitude in feet
-        max_altitude: Maximum altitude for normalization
-        
-    Returns:
-        Normalized altitude in [0, 1] range
-    """
-    return min(altitude / max_altitude, 1.0)
-
-
-def calculate_distance(pos1: Tuple[float, float], pos2: Tuple[float, float]) -> float:
-    """
-    Calculate Euclidean distance between two positions.
-    
-    Args:
-        pos1: First position (x, y)
-        pos2: Second position (x, y)
-        
-    Returns:
-        Distance between positions
-    """
-    import math
-    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
-
-
-def safe_get(dictionary: Dict[str, Any], key: str, default: Any = None) -> Any:
-    """
-    Safely get value from dictionary with default.
-    
-    Args:
-        dictionary: Dictionary to get value from
-        key: Key to look up
-        default: Default value if key not found
-        
-    Returns:
-        Value from dictionary or default
-    """
-    return dictionary.get(key, default) if dictionary else default
+ 
 
 
 def get_device(device: Optional[str] = None) -> str:

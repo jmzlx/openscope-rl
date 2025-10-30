@@ -115,9 +115,6 @@ Self-contained, fast ATC environments for rapid prototyping:
 
 **Supporting Modules:**
 - `physics.py` - Vectorized physics calculations and conflict detection
-- `recorder.py` - Episode recording for visualization
-- `player.py` - Episode playback and visualization
-- `rendering.py` - Matplotlib-based rendering utilities
 - `constants.py` - All POC configuration in one place
 
 **Key Feature**: POC environments have **zero dependencies** on the main environment module - they are completely self-contained for easy experimentation.

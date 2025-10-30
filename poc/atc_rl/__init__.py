@@ -34,21 +34,6 @@ from .physics import (
     is_ready_for_landing,
     calculate_landing_distance,
 )
-from .recorder import ATCRecorder, AircraftState, create_recorder_for_env
-from .player import ATCPlayer, visualize_episode
-from .rendering import (
-    render_2d_airspace,
-    render_3d_runways,
-    render_aircraft_2d,
-    render_aircraft_3d,
-    render_aircraft_trail,
-    render_conflict_warning,
-    render_info_panel,
-    setup_2d_plot,
-    setup_3d_plot,
-    create_aircraft_colors,
-    render_episode_summary,
-)
 from .constants import (
     AIRSPACE_SIZE,
     SEPARATION_MIN,
@@ -93,23 +78,7 @@ __all__ = [
     "is_ready_for_landing",
     "calculate_landing_distance",
     
-    # Recording and Visualization
-    "ATCRecorder",
-    "AircraftState",
-    "create_recorder_for_env",
-    "ATCPlayer",
-    "visualize_episode",
-    "render_2d_airspace",
-    "render_3d_runways",
-    "render_aircraft_2d",
-    "render_aircraft_3d",
-    "render_aircraft_trail",
-    "render_conflict_warning",
-    "render_info_panel",
-    "setup_2d_plot",
-    "setup_3d_plot",
-    "create_aircraft_colors",
-    "render_episode_summary",
+    # Recording and Visualization (archived)
     
     # Constants
     "AIRSPACE_SIZE",

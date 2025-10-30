@@ -70,9 +70,7 @@ openscope-rl/
 │   │   ├── environment_3d.py # Realistic 3D ATC environment
 │   │   ├── physics.py        # Physics calculations
 │   │   ├── constants.py      # POC constants
-│   │   ├── recorder.py       # Episode recording
-│   │   ├── player.py         # Episode visualization
-│   │   └── rendering.py      # Rendering utilities
+│   │   └── constants.py      # POC constants
 │   └── *.ipynb               # Demo notebooks
 └── openscope_async_demo.ipynb # Main demo notebook
 ```
