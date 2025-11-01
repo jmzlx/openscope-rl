@@ -180,10 +180,21 @@ class MetricsTracker:
         self.current_episode.start_episode()
         return self.current_episode
     
-    def end_episode(self) -> Optional[EpisodeMetrics]:
-        """End current episode and add to history."""
+    def end_episode(self, episode_metrics: Dict[str, Any] = None) -> Optional[EpisodeMetrics]:
+        """
+        End current episode and add to history.
+        
+        Args:
+            episode_metrics: Optional final episode metrics from environment
+        """
         if self.current_episode is None:
             return None
+        
+        # Update with final episode metrics if provided
+        if episode_metrics:
+            self.current_episode.total_aircraft_spawned = episode_metrics.get(
+                'total_aircraft_spawned', self.current_episode.total_aircraft_spawned
+            )
         
         episode = self.current_episode
         self.episodes.append(episode)
@@ -195,9 +206,71 @@ class MetricsTracker:
         self.current_episode = None
         return episode
     
+    def update(self, reward: float, info: Dict[str, Any]) -> None:
+        """
+        Update metrics with step information.
+        
+        This method extracts violations, exits, and other metrics from the
+        info dict to ensure proper tracking throughout the episode.
+        
+        Args:
+            reward: Step reward
+            info: Info dictionary from environment.step()
+        """
+        if self.current_episode is None:
+            return
+        
+        # Add reward
+        self.current_episode.add_reward(reward)
+        self.current_episode.increment_step()
+        
+        # Extract from raw_state conflicts
+        raw_state = info.get("raw_state", {})
+        conflicts = raw_state.get("conflicts", [])
+        
+        # Count violations properly
+        violations = sum(1 for c in conflicts if c.get("hasViolation", False))
+        if violations > 0:
+            self.current_episode.violations += violations
+        
+        # Track conflicts
+        if len(conflicts) > 0:
+            self.current_episode.conflicts_encountered += len(conflicts)
+        
+        # Track aircraft exits (compare counts)
+        aircraft_data = raw_state.get("aircraft", [])
+        curr_aircraft_count = len(aircraft_data)
+        
+        # Update max aircraft count
+        self.current_episode.update_aircraft_count(curr_aircraft_count)
+        
+        # Track aircraft count for exit detection
+        if not hasattr(self.current_episode, 'aircraft_count'):
+            self.current_episode.aircraft_count = curr_aircraft_count
+        
+        # Detect exits (aircraft count decreased)
+        if curr_aircraft_count < self.current_episode.aircraft_count:
+            exits = self.current_episode.aircraft_count - curr_aircraft_count
+            # Assume exits are successful unless we have better information
+            self.current_episode.successful_exits += exits
+        
+        # Update aircraft count for next step
+        self.current_episode.aircraft_count = curr_aircraft_count
+    
     def get_current_episode(self) -> Optional[EpisodeMetrics]:
         """Get current episode metrics."""
         return self.current_episode
+    
+    def get_current_episode_metrics(self) -> Dict[str, Any]:
+        """
+        Get current episode metrics as a dictionary.
+        
+        Returns:
+            Dictionary with current episode metrics, empty dict if no episode active
+        """
+        if self.current_episode is None:
+            return {}
+        return self.current_episode.to_dict()
     
     def get_recent_episodes(self, n: int = None) -> list[EpisodeMetrics]:
         """Get recent episodes."""

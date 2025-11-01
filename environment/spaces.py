@@ -24,6 +24,11 @@ def create_observation_space(max_aircraft: int = MAX_AIRCRAFT_DEFAULT) -> spaces
     """
     Create observation space for the environment.
     
+    Enhanced with 20 aircraft features (was 14):
+    - Original 14: position, velocity, state, category
+    - New 6: distance_to_exit, distance_to_conflict, relative_altitude,
+             heading_deviation, altitude_deviation, time_urgency
+    
     Args:
         max_aircraft: Maximum number of aircraft to track
         
@@ -34,7 +39,7 @@ def create_observation_space(max_aircraft: int = MAX_AIRCRAFT_DEFAULT) -> spaces
         "aircraft": spaces.Box(
             low=-np.inf,
             high=np.inf,
-            shape=(max_aircraft, AIRCRAFT_FEATURE_DIM),
+            shape=(max_aircraft, AIRCRAFT_FEATURE_DIM),  # Now 20 instead of 14
             dtype=np.float32
         ),
         "aircraft_mask": spaces.Box(

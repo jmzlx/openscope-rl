@@ -336,15 +336,27 @@ class PlaywrightEnv(gym.Env):
         """
         Check if episode should terminate.
         
+        Uses curriculum-aware score threshold to prevent premature termination.
+        Episodes should run full length unless catastrophic failure occurs.
+        
         Args:
             state: Current game state
             
         Returns:
             Tuple of (terminated, truncated)
         """
-        # Check for termination (low score)
+        # Check for termination (catastrophic score or all aircraft gone)
         score = state.get("score", 0)
-        terminated = score < self.config.custom_config.get("min_score_threshold", -2000)
+        aircraft_data = state.get("aircraft", [])
+        
+        # Use curriculum-aware threshold from reward_config (default -5000)
+        min_score_threshold = self.config.reward_config.min_score_threshold
+        
+        # Terminate only on catastrophic failure or if ALL aircraft are gone
+        terminated = (
+            score < min_score_threshold or
+            (len(aircraft_data) == 0 and self.current_step > 10)  # No aircraft after initial spawn
+        )
         
         # Check for truncation (time limit)
         truncated = (
@@ -356,12 +368,25 @@ class PlaywrightEnv(gym.Env):
     
     def _prepare_info(self, state: Dict[str, Any], command: Optional[str], 
                      action: Dict[str, int], step_time: float) -> Dict[str, Any]:
-        """Prepare info dictionary for step return."""
+        """
+        Prepare info dictionary for step return with complete metrics.
+        
+        Includes raw state, conflicts, violations, and all tracking data needed
+        by MetricsTracker and evaluation functions.
+        """
+        conflicts = state.get("conflicts", [])
+        aircraft_data = state.get("aircraft", [])
+        
+        # Count violations from conflicts
+        violations = sum(1 for c in conflicts if c.get("hasViolation", False))
+        
         info = {
             "raw_state": state,
             "score": state.get("score", 0),
-            "aircraft_count": len(state.get("aircraft", [])),
-            "conflict_count": len(state.get("conflicts", [])),
+            "aircraft_count": len(aircraft_data),
+            "conflicts": conflicts,  # Full conflict data
+            "conflict_count": len(conflicts),
+            "violations": violations,  # Violation count this step
             "episode_metrics": self.episode_metrics.to_dict(),
             "command_issued": command,
             "action": action,

@@ -87,7 +87,12 @@ class StateProcessor:
     
     def _process_aircraft(self, aircraft_data: List[Dict[str, Any]]) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Process aircraft data into observation format.
+        Process aircraft data into observation format with enhanced features.
+        
+        Now includes 20 features (was 14):
+        - Original 14: position, velocity, state, category
+        - New 6: distance to exit, distance to conflict, relative altitude,
+                 heading/altitude deviations, time urgency
         
         Args:
             aircraft_data: List of aircraft dictionaries
@@ -106,14 +111,20 @@ class StateProcessor:
             x_norm, y_norm = self._normalize_position(pos)
             
             # Extract and normalize other features
-            altitude_norm = self._normalize_altitude(ac.get("altitude", 0))
-            heading_norm = self._normalize_angle(ac.get("heading", 0))
-            speed_norm = self._normalize_speed(ac.get("speed", 0))
+            altitude = ac.get("altitude", 0)
+            altitude_norm = self._normalize_altitude(altitude)
+            heading = ac.get("heading", 0)
+            heading_norm = self._normalize_angle(heading)
+            speed = ac.get("speed", 0)
+            speed_norm = self._normalize_speed(speed)
             ground_speed_norm = self._normalize_speed(ac.get("groundSpeed", 0), MAX_GROUND_SPEED)
             
-            assigned_altitude_norm = self._normalize_altitude(ac.get("assignedAltitude", 0))
-            assigned_heading_norm = self._normalize_angle(ac.get("assignedHeading", 0))
-            assigned_speed_norm = self._normalize_speed(ac.get("assignedSpeed", 0))
+            assigned_altitude = ac.get("assignedAltitude", 0)
+            assigned_altitude_norm = self._normalize_altitude(assigned_altitude)
+            assigned_heading = ac.get("assignedHeading", 0)
+            assigned_heading_norm = self._normalize_angle(assigned_heading)
+            assigned_speed = ac.get("assignedSpeed", 0)
+            assigned_speed_norm = self._normalize_speed(assigned_speed)
             
             # Boolean features
             is_on_ground = 1.0 if ac.get("isOnGround", False) else 0.0
@@ -124,7 +135,33 @@ class StateProcessor:
             is_arrival = 1.0 if ac.get("category") == "arrival" else 0.0
             is_departure = 1.0 if ac.get("category") == "departure" else 0.0
             
+            # NEW FEATURE 14: Distance to nearest exit/boundary (normalized to [0, 1])
+            dist_to_exit = self._calculate_distance_to_nearest_exit(pos)
+            dist_to_exit_norm = min(dist_to_exit / 100.0, 1.0)  # Cap at 100nm
+            
+            # NEW FEATURE 15: Distance to nearest conflict aircraft (normalized)
+            dist_to_conflict = self._calculate_distance_to_nearest_conflict(i, aircraft_data)
+            dist_to_conflict_norm = min(dist_to_conflict / 20.0, 1.0)  # Cap at 20nm
+            
+            # NEW FEATURE 16: Relative altitude to nearest aircraft (normalized to [-1, 1])
+            relative_alt = self._calculate_relative_altitude_to_nearest(i, aircraft_data)
+            relative_alt_norm = np.clip(relative_alt / MAX_ALTITUDE, -1.0, 1.0)
+            
+            # NEW FEATURE 17: Heading deviation from assigned (how far off course)
+            heading_deviation = self._calculate_heading_deviation(heading, assigned_heading)
+            heading_deviation_norm = heading_deviation / 180.0  # Normalize to [0, 1]
+            
+            # NEW FEATURE 18: Altitude deviation from assigned (how far from target)
+            altitude_deviation = abs(altitude - assigned_altitude)
+            altitude_deviation_norm = min(altitude_deviation / 10000.0, 1.0)  # Cap at 10k ft
+            
+            # NEW FEATURE 19: Time urgency (distance/speed = time to exit, normalized)
+            speed_safe = max(speed, 1)  # Avoid division by zero
+            time_to_exit = dist_to_exit / (speed_safe / 3600.0)  # Convert to hours
+            time_to_exit_norm = min(time_to_exit / 2.0, 1.0)  # Cap at 2 hours
+            
             aircraft_obs[i, :] = [
+                # Original 14 features (0-13)
                 x_norm,                          # 0: x position
                 y_norm,                          # 1: y position
                 altitude_norm,                   # 2: altitude
@@ -139,6 +176,13 @@ class StateProcessor:
                 is_established,                  # 11: is established
                 is_arrival,                      # 12: is arrival
                 is_departure,                    # 13: is departure
+                # New 6 features (14-19)
+                dist_to_exit_norm,               # 14: distance to exit
+                dist_to_conflict_norm,           # 15: distance to nearest conflict
+                relative_alt_norm,               # 16: relative altitude to nearest
+                heading_deviation_norm,          # 17: heading deviation
+                altitude_deviation_norm,         # 18: altitude deviation
+                time_to_exit_norm,               # 19: time urgency
             ]
         
         return aircraft_obs, aircraft_mask
@@ -228,6 +272,123 @@ class StateProcessor:
         """Normalize altitude to [0, 1] range."""
         return min(altitude / MAX_ALTITUDE, 1.0)
     
+    def _calculate_distance_to_nearest_exit(self, pos: List[float]) -> float:
+        """
+        Calculate distance to nearest airspace boundary.
+        
+        Args:
+            pos: Aircraft position [x, y]
+            
+        Returns:
+            Distance to nearest boundary in nm
+        """
+        if not pos or len(pos) < 2:
+            return 100.0
+        
+        x, y = pos[0], pos[1]
+        AIRSPACE_SIZE = 100.0  # Assume 100nm x 100nm airspace
+        
+        # Distance to each edge
+        dist_north = AIRSPACE_SIZE/2 - y
+        dist_south = AIRSPACE_SIZE/2 + y
+        dist_east = AIRSPACE_SIZE/2 - x
+        dist_west = AIRSPACE_SIZE/2 + x
+        
+        return max(0.0, min(dist_north, dist_south, dist_east, dist_west))
+    
+    def _calculate_distance_to_nearest_conflict(
+        self, idx: int, aircraft_data: List[Dict[str, Any]]
+    ) -> float:
+        """
+        Calculate distance to nearest aircraft within conflict range.
+        
+        Args:
+            idx: Index of current aircraft
+            aircraft_data: List of all aircraft
+            
+        Returns:
+            Distance to nearest aircraft in nm (999 if none nearby)
+        """
+        if idx >= len(aircraft_data):
+            return 999.0
+        
+        my_pos = aircraft_data[idx].get("position", [0, 0])
+        if len(my_pos) < 2:
+            return 999.0
+        
+        min_dist = 999.0
+        
+        for i, other_ac in enumerate(aircraft_data):
+            if i == idx:
+                continue
+            
+            other_pos = other_ac.get("position", [0, 0])
+            if len(other_pos) < 2:
+                continue
+            
+            dist = np.sqrt((my_pos[0] - other_pos[0])**2 + (my_pos[1] - other_pos[1])**2)
+            
+            # Only consider aircraft within 20nm (potential conflicts)
+            if dist < 20.0:
+                min_dist = min(min_dist, dist)
+        
+        return min_dist
+    
+    def _calculate_relative_altitude_to_nearest(
+        self, idx: int, aircraft_data: List[Dict[str, Any]]
+    ) -> float:
+        """
+        Calculate relative altitude to nearest aircraft.
+        
+        Args:
+            idx: Index of current aircraft
+            aircraft_data: List of all aircraft
+            
+        Returns:
+            Altitude difference in feet (my_alt - nearest_alt)
+        """
+        if idx >= len(aircraft_data):
+            return 0.0
+        
+        my_alt = aircraft_data[idx].get("altitude", 0)
+        my_pos = aircraft_data[idx].get("position", [0, 0])
+        
+        if len(my_pos) < 2:
+            return 0.0
+        
+        nearest_alt = my_alt
+        min_dist = 999.0
+        
+        for i, other_ac in enumerate(aircraft_data):
+            if i == idx:
+                continue
+            
+            other_pos = other_ac.get("position", [0, 0])
+            if len(other_pos) < 2:
+                continue
+            
+            dist = np.sqrt((my_pos[0] - other_pos[0])**2 + (my_pos[1] - other_pos[1])**2)
+            
+            if dist < min_dist:
+                min_dist = dist
+                nearest_alt = other_ac.get("altitude", my_alt)
+        
+        return my_alt - nearest_alt
+    
+    def _calculate_heading_deviation(self, current_heading: float, assigned_heading: float) -> float:
+        """
+        Calculate smallest angle between current and assigned heading.
+        
+        Args:
+            current_heading: Current heading in degrees
+            assigned_heading: Assigned heading in degrees
+            
+        Returns:
+            Smallest angle difference in degrees [0, 180]
+        """
+        diff = abs((assigned_heading - current_heading + 180) % 360 - 180)
+        return diff
+    
     def get_observation_info(self) -> Dict[str, Any]:
         """
         Get information about observation structure.
@@ -241,10 +402,14 @@ class StateProcessor:
             "global_state_shape": (self.global_state_dim,),
             "conflict_matrix_shape": (self.max_aircraft, self.max_aircraft),
             "aircraft_features": [
+                # Original 14 features
                 "x_position", "y_position", "altitude", "heading", "speed",
                 "ground_speed", "assigned_altitude", "assigned_heading", 
                 "assigned_speed", "is_on_ground", "is_taxiing", "is_established",
-                "is_arrival", "is_departure"
+                "is_arrival", "is_departure",
+                # New 6 features for better decision-making
+                "distance_to_exit", "distance_to_conflict", "relative_altitude",
+                "heading_deviation", "altitude_deviation", "time_urgency",
             ],
             "global_features": [
                 "time", "aircraft_density", "conflict_density", "score"

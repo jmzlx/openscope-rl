@@ -29,17 +29,17 @@ class AircraftCategory(Enum):
 class RewardConfig:
     """Configuration for reward calculation."""
     
-    # Base rewards
-    timestep_penalty: float = -0.01
+    # Base rewards (enhanced for denser feedback)
+    timestep_penalty: float = -0.1  # Was -0.01, make more significant
     action_reward: float = 0.0
     
     # Safety rewards
     separation_loss: float = -200.0
     conflict_warning: float = -2.0
-    safe_separation_bonus: float = 0.02
+    safe_separation_bonus: float = 0.1  # Was 0.02, reward good behavior more
     
     # Performance rewards
-    successful_exit_bonus: float = 100.0
+    successful_exit_bonus: float = 50.0  # Was 100.0, balanced with penalties
     failed_exit_penalty: float = -20.0
     episode_termination_penalty: float = -100.0
     
@@ -52,30 +52,33 @@ class RewardConfig:
     high_success_threshold: float = 0.8
     medium_success_threshold: float = 0.6
     low_success_threshold: float = 0.4
+    
+    # Curriculum-specific (override per stage)
+    min_score_threshold: float = -5000.0  # Termination threshold for curriculum stages
 
 
 @dataclass
 class ActionConfig:
     """Configuration for action space and mappings."""
     
-    # Action space dimensions
+    # Action space dimensions (reduced for efficiency)
     max_aircraft: int = 20
     command_type_count: int = 5
-    altitude_levels: int = 18
-    heading_changes_count: int = 13
-    speed_levels: int = 8
+    altitude_levels: int = 9  # Was 18 (reduced 2x)
+    heading_changes_count: int = 7  # Was 13 (reduced ~2x)
+    speed_levels: int = 4  # Was 8 (reduced 2x)
     
-    # Action mappings
+    # Action mappings (coarser but still expressive)
     altitude_values: List[int] = field(default_factory=lambda: [
-        10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180
+        0, 20, 40, 60, 80, 100, 120, 140, 160  # Every 20,000 ft (was every 10,000 ft)
     ])
     
     heading_changes: List[int] = field(default_factory=lambda: [
-        -90, -60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60, 90
+        -90, -45, -20, 0, 20, 45, 90  # Key heading changes (was 13 options)
     ])
     
     speed_values: List[int] = field(default_factory=lambda: [
-        180, 200, 220, 240, 260, 280, 300, 320
+        180, 220, 260, 300  # 40 knot increments (was 20 knot increments)
     ])
     
     command_types: List[CommandType] = field(default_factory=lambda: [

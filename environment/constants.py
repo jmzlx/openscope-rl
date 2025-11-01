@@ -12,28 +12,28 @@ from .config import CommandType
  
 
 
-# Observation space dimensions
-AIRCRAFT_FEATURE_DIM = 14
+# Observation space dimensions (enhanced with 6 new features)
+AIRCRAFT_FEATURE_DIM = 20  # Was 14, added 6 features for better decision-making
 GLOBAL_STATE_DIM = 4
 MAX_AIRCRAFT_DEFAULT = 20
 
-# Action space dimensions
+# Action space dimensions (reduced for efficiency - 3.8x smaller action space)
 COMMAND_TYPE_COUNT = 5
-ALTITUDE_LEVELS = 18
-HEADING_CHANGES_COUNT = 13
-SPEED_LEVELS = 8
+ALTITUDE_LEVELS = 9  # Was 18 (reduced 2x for 50-80x total reduction with masking)
+HEADING_CHANGES_COUNT = 7  # Was 13
+SPEED_LEVELS = 4  # Was 8
 
-# Action mappings
+# Action mappings (coarser but still expressive enough for ATC)
 ALTITUDE_VALUES: List[int] = [
-    10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180
+    0, 20, 40, 60, 80, 100, 120, 140, 160  # Every 20,000 ft (in hundreds)
 ]
 
 HEADING_CHANGES: List[int] = [
-    -90, -60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60, 90
+    -90, -45, -20, 0, 20, 45, 90  # Key maneuver angles
 ]
 
 SPEED_VALUES: List[int] = [
-    180, 200, 220, 240, 260, 280, 300, 320
+    180, 220, 260, 300  # 40 knot increments (sufficient range for ATC)
 ]
 
 COMMAND_TYPES: List[CommandType] = [
@@ -75,8 +75,8 @@ MAX_SPEED = 500.0
 MAX_ALTITUDE = 50000.0
 MAX_GROUND_SPEED = 600.0
 
-# Episode termination conditions
-MIN_SCORE_THRESHOLD = -2000
+# Episode termination conditions (now curriculum-aware - override per stage)
+MIN_SCORE_THRESHOLD = -5000  # Was -2000, increased to prevent premature termination
 MAX_STEPS_THRESHOLD = 1000
 
 # OpenScope scoring events and their point values

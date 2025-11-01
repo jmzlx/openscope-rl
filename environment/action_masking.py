@@ -425,3 +425,311 @@ def print_action_mask_summary(
     print(f"Total Valid Actions: {mask.sum()} / {len(mask)}")
     print(f"Action Space Reduction: {(1 - mask.sum() / len(mask)) * 100:.1f}%")
     print("="*80 + "\n")
+
+
+# ============================================================================
+# AGGRESSIVE SMART ACTION MASKING
+# ============================================================================
+
+
+def _is_aircraft_nearby(ac1: Dict, ac2: Dict, distance_nm: float) -> bool:
+    """Check if two aircraft are within specified distance."""
+    pos1 = ac1.get('position', [0, 0])
+    pos2 = ac2.get('position', [0, 0])
+    if len(pos1) < 2 or len(pos2) < 2:
+        return False
+    dx = pos1[0] - pos2[0]
+    dy = pos1[1] - pos2[1]
+    dist = np.sqrt(dx**2 + dy**2)
+    return dist < distance_nm
+
+
+def _angle_difference(a1: float, a2: float) -> float:
+    """Calculate smallest angle difference between two headings."""
+    diff = (a2 - a1 + 180) % 360 - 180
+    return abs(diff)
+
+
+def _calculate_bearing(pos1: List[float], pos2: List[float]) -> float:
+    """Calculate bearing from pos1 to pos2 in degrees."""
+    if len(pos1) < 2 or len(pos2) < 2:
+        return 0.0
+    dx = pos2[0] - pos1[0]
+    dy = pos2[1] - pos1[1]
+    bearing = np.degrees(np.arctan2(dx, dy)) % 360
+    return bearing
+
+
+def _is_near_exit(pos: List[float], distance_nm: float) -> bool:
+    """Check if position is near airspace boundary."""
+    if len(pos) < 2:
+        return False
+    AIRSPACE_SIZE = 100.0  # Assume 100nm x 100nm airspace
+    x, y = pos[0], pos[1]
+    return (abs(x) > AIRSPACE_SIZE/2 - distance_nm or 
+            abs(y) > AIRSPACE_SIZE/2 - distance_nm)
+
+
+def get_smart_altitude_mask(
+    aircraft_idx: int,
+    aircraft_data: List[Dict],
+    altitude_values: List[int],
+) -> np.ndarray:
+    """
+    Mask redundant and infeasible altitude changes.
+    
+    Masks:
+    - Commands when already at assigned altitude
+    - Extreme altitude changes (>40,000ft)
+    - Altitudes that would conflict with nearby aircraft
+    """
+    mask = np.ones(len(altitude_values), dtype=bool)
+    
+    if aircraft_idx >= len(aircraft_data):
+        return mask
+    
+    ac = aircraft_data[aircraft_idx]
+    current_altitude = ac.get('altitude', 0)
+    assigned_altitude = ac.get('assignedAltitude', 0)
+    
+    # 1. Mask if already at assigned altitude (±500ft tolerance for 20k increments)
+    if abs(current_altitude - assigned_altitude) < 500:
+        mask[:] = False
+        return mask
+    
+    # 2. Mask extreme changes (>40,000ft)
+    for i, alt_level in enumerate(altitude_values):
+        target_alt = alt_level * 100  # Convert to feet
+        if abs(target_alt - current_altitude) > 40000:
+            mask[i] = False
+    
+    # 3. Mask altitudes that match nearby aircraft (±2000ft buffer for safety)
+    for other_ac in aircraft_data:
+        if other_ac.get('callsign') == ac.get('callsign'):
+            continue
+        # Check if aircraft are nearby (within 5nm horizontally)
+        if _is_aircraft_nearby(ac, other_ac, distance_nm=5.0):
+            other_alt = other_ac.get('altitude', 0)
+            for i, alt_level in enumerate(altitude_values):
+                target_alt = alt_level * 100
+                if abs(target_alt - other_alt) < 2000:  # Within 2000ft
+                    mask[i] = False
+    
+    return mask
+
+
+def get_smart_heading_mask(
+    aircraft_idx: int,
+    aircraft_data: List[Dict],
+    heading_changes: List[int],
+) -> np.ndarray:
+    """
+    Mask redundant and unsafe heading changes.
+    
+    Masks:
+    - Commands when already at assigned heading
+    - Heading changes pointing at nearby aircraft
+    """
+    mask = np.ones(len(heading_changes), dtype=bool)
+    
+    if aircraft_idx >= len(aircraft_data):
+        return mask
+    
+    ac = aircraft_data[aircraft_idx]
+    current_heading = ac.get('heading', 0)
+    assigned_heading = ac.get('assignedHeading', 0)
+    
+    # 1. Mask if already at assigned heading (±10° tolerance for coarser options)
+    heading_diff = _angle_difference(current_heading, assigned_heading)
+    if heading_diff < 10.0:
+        mask[:] = False
+        return mask
+    
+    # 2. Mask heading changes that point directly at nearby aircraft
+    for other_ac in aircraft_data:
+        if other_ac.get('callsign') == ac.get('callsign'):
+            continue
+        if _is_aircraft_nearby(ac, other_ac, distance_nm=3.0):
+            # Calculate bearing to other aircraft
+            bearing = _calculate_bearing(
+                ac.get('position', [0, 0]),
+                other_ac.get('position', [0, 0])
+            )
+            # Mask heading changes that would point within ±30° of conflict
+            for i, heading_change in enumerate(heading_changes):
+                new_heading = (current_heading + heading_change) % 360
+                if _angle_difference(new_heading, bearing) < 30:
+                    mask[i] = False
+    
+    return mask
+
+
+def get_smart_speed_mask(
+    aircraft_idx: int,
+    aircraft_data: List[Dict],
+    speed_values: List[int],
+) -> np.ndarray:
+    """
+    Mask redundant speed changes.
+    
+    Masks:
+    - Commands when already at assigned speed
+    - Extreme speed changes (>100kts)
+    """
+    mask = np.ones(len(speed_values), dtype=bool)
+    
+    if aircraft_idx >= len(aircraft_data):
+        return mask
+    
+    ac = aircraft_data[aircraft_idx]
+    current_speed = ac.get('speed', 0)
+    assigned_speed = ac.get('assignedSpeed', 0)
+    
+    # Mask if already at assigned speed (±20kts tolerance for coarser options)
+    if abs(current_speed - assigned_speed) < 20:
+        mask[:] = False
+        return mask
+    
+    # Mask extreme speed changes (>100kts difference)
+    for i, speed in enumerate(speed_values):
+        if abs(speed - current_speed) > 100:
+            mask[i] = False
+    
+    return mask
+
+
+def get_smart_aircraft_mask(
+    aircraft_data: List[Dict],
+    aircraft_mask: np.ndarray,
+    max_aircraft: int,
+) -> np.ndarray:
+    """
+    Mask aircraft that shouldn't be commanded right now.
+    
+    Masks:
+    - Aircraft on ground or taxiing
+    - Aircraft established on ILS approach
+    - Aircraft very close to exiting airspace
+    """
+    mask = np.zeros(max_aircraft + 1, dtype=bool)
+    num_active = int(aircraft_mask.sum())
+    
+    # Start with valid aircraft IDs
+    mask[:num_active] = True
+    mask[max_aircraft] = True  # Always allow "no action"
+    
+    # Additional filtering for aircraft that don't need commands
+    for i in range(min(num_active, len(aircraft_data))):
+        ac = aircraft_data[i]
+        
+        # Mask aircraft on ground or taxiing
+        if ac.get('isOnGround', False) or ac.get('isTaxiing', False):
+            mask[i] = False
+            continue
+        
+        # Mask aircraft established on ILS (don't interfere)
+        if ac.get('isEstablished', False) and ac.get('hasApproachClearance', False):
+            mask[i] = False
+            continue
+        
+        # Mask aircraft very close to exit (within 1nm of airspace boundary)
+        pos = ac.get('position', [0, 0])
+        if _is_near_exit(pos, distance_nm=1.0):
+            mask[i] = False
+            continue
+    
+    return mask
+
+
+def get_aggregate_altitude_mask(aircraft_data: List[Dict], altitude_values: List[int]) -> np.ndarray:
+    """Get conservative altitude mask across all aircraft."""
+    mask = np.zeros(len(altitude_values), dtype=bool)
+    
+    for i in range(len(aircraft_data)):
+        ac_mask = get_smart_altitude_mask(i, aircraft_data, altitude_values)
+        mask |= ac_mask  # Union: allow if valid for any aircraft
+    
+    # Ensure at least one option is always available
+    if not mask.any():
+        mask[:] = True
+    
+    return mask
+
+
+def get_aggregate_heading_mask(aircraft_data: List[Dict], heading_changes: List[int]) -> np.ndarray:
+    """Get conservative heading mask across all aircraft."""
+    mask = np.zeros(len(heading_changes), dtype=bool)
+    
+    for i in range(len(aircraft_data)):
+        ac_mask = get_smart_heading_mask(i, aircraft_data, heading_changes)
+        mask |= ac_mask
+    
+    if not mask.any():
+        mask[:] = True
+    
+    return mask
+
+
+def get_aggregate_speed_mask(aircraft_data: List[Dict], speed_values: List[int]) -> np.ndarray:
+    """Get conservative speed mask across all aircraft."""
+    mask = np.zeros(len(speed_values), dtype=bool)
+    
+    for i in range(len(aircraft_data)):
+        ac_mask = get_smart_speed_mask(i, aircraft_data, speed_values)
+        mask |= ac_mask
+    
+    if not mask.any():
+        mask[:] = True
+    
+    return mask
+
+
+def get_smart_action_mask(
+    obs: Dict[str, np.ndarray],
+    aircraft_data: List[Dict[str, Any]],
+    max_aircraft: int,
+    action_space: spaces.Dict,
+) -> np.ndarray:
+    """
+    Generate comprehensive action mask with aggressive filtering.
+    
+    This replaces the default get_action_mask with smart masking that:
+    - Masks redundant commands (already at target)
+    - Masks unsafe commands (conflicts)
+    - Masks infeasible commands (extreme changes)
+    - Masks aircraft that don't need attention
+    
+    Expected reduction: 244k → 64k (dimensions) → 3-5k (smart masking)
+    Overall: 50-80x reduction in exploration space
+    """
+    aircraft_mask = obs["aircraft_mask"]
+    
+    # Import constants
+    from .constants import ALTITUDE_VALUES, HEADING_CHANGES, SPEED_VALUES
+    
+    action_mask = []
+    
+    # 1. Smart aircraft selection mask
+    aircraft_id_mask = get_smart_aircraft_mask(aircraft_data, aircraft_mask, max_aircraft)
+    action_mask.append(aircraft_id_mask)
+    
+    # 2. Command type mask (keep existing ILS logic)
+    command_type_count = action_space["command_type"].n
+    command_type_mask = np.ones(command_type_count, dtype=bool)
+    has_any_runway = any(ac.get("targetRunway") or ac.get("target_runway") for ac in aircraft_data)
+    if not has_any_runway and command_type_count > 3:
+        command_type_mask[3] = False  # Mask ILS
+    action_mask.append(command_type_mask)
+    
+    # 3-5. Smart altitude/heading/speed masks
+    # Use aggregate masking across all active aircraft
+    altitude_mask = get_aggregate_altitude_mask(aircraft_data, ALTITUDE_VALUES)
+    action_mask.append(altitude_mask)
+    
+    heading_mask = get_aggregate_heading_mask(aircraft_data, HEADING_CHANGES)
+    action_mask.append(heading_mask)
+    
+    speed_mask = get_aggregate_speed_mask(aircraft_data, SPEED_VALUES)
+    action_mask.append(speed_mask)
+    
+    return np.concatenate(action_mask)

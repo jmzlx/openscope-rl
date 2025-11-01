@@ -51,7 +51,13 @@ class DefaultRewardStrategy(RewardStrategy):
     def calculate_reward(self, state: Dict[str, Any], prev_state: Dict[str, Any], 
                         action: Optional[Dict[str, int]] = None) -> float:
         """
-        Calculate reward using default strategy.
+        Calculate reward using default strategy with dense feedback.
+        
+        Enhanced with:
+        - Graduated conflict penalties (not binary)
+        - Aircraft exit bonuses
+        - Increased safe separation rewards
+        - Progress tracking
         
         Args:
             state: Current game state
@@ -63,29 +69,44 @@ class DefaultRewardStrategy(RewardStrategy):
         """
         reward = 0.0
         
-        # Base score change
+        # Base score change from OpenScope
         score_change = state.get("score", 0) - prev_state.get("score", 0)
         reward += score_change
         
-        # Time penalty
+        # Time penalty (increased from -0.01 to -0.1 for efficiency pressure)
         reward += self.config.timestep_penalty
         
         # Action reward
         if action is not None:
             reward += self.config.action_reward
         
-        # Conflict and violation penalties
+        # Graduated conflict and violation penalties (not binary)
         conflicts = state.get("conflicts", [])
-        for conflict in conflicts:
-            if conflict.get("hasViolation"):
-                reward += self.config.separation_loss / 10.0
-            elif conflict.get("hasConflict"):
-                reward += self.config.conflict_warning
+        CRITICAL_DISTANCE = 5.0  # nm
         
-        # Safe separation bonus
-        aircraft = state.get("aircraft", [])
-        if len(conflicts) == 0 and len(aircraft) > 0:
-            reward += self.config.safe_separation_bonus
+        for conflict in conflicts:
+            distance = conflict.get("distance", float('inf'))
+            
+            # Graduated penalty based on proximity
+            if distance < CRITICAL_DISTANCE:
+                severity = (CRITICAL_DISTANCE - distance) / CRITICAL_DISTANCE
+                reward += self.config.conflict_warning * severity * 5  # -2 to -10 based on proximity
+            
+            # Heavy penalty for actual violations
+            if conflict.get("hasViolation"):
+                reward += self.config.separation_loss  # -200
+        
+        # Aircraft exit bonus (track aircraft count changes)
+        curr_aircraft = state.get("aircraft", [])
+        prev_aircraft = prev_state.get("aircraft", [])
+        aircraft_exited = len(prev_aircraft) - len(curr_aircraft)
+        
+        if aircraft_exited > 0:
+            reward += self.config.successful_exit_bonus * aircraft_exited  # 50 per aircraft
+        
+        # Maintaining safe separation bonus (increased from 0.02 to 0.1)
+        if len(conflicts) == 0 and len(curr_aircraft) > 0:
+            reward += self.config.safe_separation_bonus * len(curr_aircraft)  # Scale with aircraft count
         
         return reward
 
