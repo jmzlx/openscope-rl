@@ -1,0 +1,92 @@
+# WandB Sweep Configuration for PPO Baseline Hyperparameter Optimization
+# Usage: wandb sweep notebooks/ppo_baseline_sweep.yaml
+
+program: 01_baseline_ppo_demo.ipynb
+method: bayes  # Bayesian optimization for efficient search
+
+# Optimization metric
+metric:
+  name: eval/avg_reward
+  goal: maximize
+
+# Early stopping
+early_terminate:
+  type: hyperband
+  min_iter: 3
+  eta: 2
+
+# Hyperparameter search space
+parameters:
+  # PPO Hyperparameters
+  learning_rate:
+    distribution: log_uniform_values
+    min: 1e-5
+    max: 1e-3
+  
+  clip_range:
+    distribution: uniform
+    min: 0.1
+    max: 0.3
+  
+  ent_coef:
+    distribution: log_uniform_values
+    min: 0.0001
+    max: 0.1
+  
+  vf_coef:
+    distribution: uniform
+    min: 0.3
+    max: 0.7
+  
+  gamma:
+    distribution: uniform
+    min: 0.95
+    max: 0.995
+  
+  gae_lambda:
+    distribution: uniform
+    min: 0.9
+    max: 0.99
+  
+  # Training parameters
+  n_steps:
+    values: [1024, 2048, 4096]
+  
+  batch_size:
+    values: [32, 64, 128]
+  
+  n_epochs:
+    values: [5, 10, 20]
+  
+  # Reward configuration
+  timestep_penalty:
+    distribution: log_uniform_values
+    min: -0.1
+    max: -0.0001
+  
+  safe_separation_bonus:
+    distribution: log_uniform_values
+    min: 0.001
+    max: 0.1
+  
+  # Environment parameters
+  episode_length:
+    values: [600, 1200, 1800]
+  
+  max_aircraft:
+    values: [10, 20, 30]
+  
+  timewarp:
+    values: [100, 500, 1000]
+  
+  # Training duration
+  total_timesteps:
+    values: [50000, 100000, 200000]
+
+# Fixed parameters (not swept)
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}
+
