@@ -70,41 +70,48 @@ class CurriculumManager:
         logger.info(f"Curriculum initialized with {len(self.stages)} stages")
     
     def _create_default_stages(self) -> List[CurriculumStage]:
-        """Create default curriculum stages."""
+        """
+        Create default curriculum stages.
+        
+        Note: min_score_threshold is now used only for CATASTROPHIC failure detection
+        (actual threshold = min_score_threshold * 10). Episodes run fixed duration
+        to ensure consistent learning rollouts. The negative reward is the teaching
+        signal - we don't cut episodes short.
+        """
         return [
             CurriculumStage(
                 name="easy",
                 max_aircraft=3,
-                min_score_threshold=-5000,
+                min_score_threshold=-5000,  # Catastrophic = -50k (safety valve)
                 timesteps=100000,
-                episode_length=300,
+                episode_length=300,  # Fixed duration
                 success_threshold=0.5,
                 min_avg_reward=-1500.0,
             ),
             CurriculumStage(
                 name="medium",
                 max_aircraft=5,
-                min_score_threshold=-8000,
+                min_score_threshold=-8000,  # Catastrophic = -80k
                 timesteps=100000,
-                episode_length=400,
+                episode_length=400,  # Fixed duration
                 success_threshold=0.45,
                 min_avg_reward=-2000.0,
             ),
             CurriculumStage(
                 name="hard",
                 max_aircraft=8,
-                min_score_threshold=-12000,
+                min_score_threshold=-12000,  # Catastrophic = -120k
                 timesteps=150000,
-                episode_length=500,
+                episode_length=500,  # Fixed duration
                 success_threshold=0.4,
                 min_avg_reward=-2500.0,
             ),
             CurriculumStage(
                 name="expert",
                 max_aircraft=12,
-                min_score_threshold=-20000,
+                min_score_threshold=-20000,  # Catastrophic = -200k
                 timesteps=150000,
-                episode_length=600,
+                episode_length=600,  # Fixed duration
                 success_threshold=0.35,
                 min_avg_reward=-3000.0,
             ),
@@ -247,9 +254,9 @@ class CurriculumManager:
             
             print(f"\n{marker} Stage {i+1}: {stage.name.upper()} {status}")
             print(f"   Aircraft: {stage.max_aircraft}")
-            print(f"   Episode Length: {stage.episode_length} steps")
+            print(f"   Episode Length: {stage.episode_length} steps (fixed duration)")
             print(f"   Training Steps: {stage.timesteps:,}")
-            print(f"   Score Threshold: {stage.min_score_threshold}")
+            print(f"   Catastrophic Threshold: {stage.min_score_threshold * 10:,.0f} (safety valve)")
             print(f"   Success Rate Target: {stage.success_threshold:.0%}")
             print(f"   Avg Reward Target: {stage.min_avg_reward:.0f}")
         

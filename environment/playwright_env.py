@@ -336,8 +336,12 @@ class PlaywrightEnv(gym.Env):
         """
         Check if episode should terminate.
         
-        Uses curriculum-aware score threshold to prevent premature termination.
-        Episodes should run full length unless catastrophic failure occurs.
+        For curriculum learning, we use FIXED-DURATION episodes to ensure
+        consistent learning rollouts. Only terminate early for catastrophic failures
+        (e.g., simulation broken, extreme score collapse >10x threshold).
+        
+        The negative reward itself is the teaching signal - we want the agent to
+        experience full consequences rather than cutting learning short.
         
         Args:
             state: Current game state
@@ -345,20 +349,25 @@ class PlaywrightEnv(gym.Env):
         Returns:
             Tuple of (terminated, truncated)
         """
-        # Check for termination (catastrophic score or all aircraft gone)
         score = state.get("score", 0)
         aircraft_data = state.get("aircraft", [])
         
-        # Use curriculum-aware threshold from reward_config (default -5000)
-        min_score_threshold = self.config.reward_config.min_score_threshold
+        # CATASTROPHIC failure threshold: 10x worse than stage threshold
+        # This is a safety valve, not a normal termination condition
+        # Example: Stage 1 threshold is -5000, catastrophic is -50000
+        base_threshold = self.config.reward_config.min_score_threshold
+        catastrophic_threshold = base_threshold * 10
         
-        # Terminate only on catastrophic failure or if ALL aircraft are gone
+        # Only terminate on truly broken scenarios:
+        # 1. Extreme score collapse (simulation likely broken)
+        # 2. All aircraft disappeared (simulation broken)
         terminated = (
-            score < min_score_threshold or
-            (len(aircraft_data) == 0 and self.current_step > 10)  # No aircraft after initial spawn
+            score < catastrophic_threshold or
+            (len(aircraft_data) == 0 and self.current_step > 10)
         )
         
-        # Check for truncation (time limit)
+        # Normal case: Let episodes run their full course (truncation, not termination)
+        # This ensures consistent rollout lengths for better PPO learning
         truncated = (
             state.get("time", 0) >= self.config.episode_length or 
             self.current_step >= self.config.custom_config.get("max_steps", 1000)

@@ -75,8 +75,10 @@ MAX_SPEED = 500.0
 MAX_ALTITUDE = 50000.0
 MAX_GROUND_SPEED = 600.0
 
-# Episode termination conditions (now curriculum-aware - override per stage)
-MIN_SCORE_THRESHOLD = -5000  # Was -2000, increased to prevent premature termination
+# Episode termination conditions (curriculum-aware, fixed-duration episodes)
+# Note: MIN_SCORE_THRESHOLD is base for CATASTROPHIC failure detection (actual = 10x this)
+# Episodes run fixed duration by default - only terminate on catastrophic failures
+MIN_SCORE_THRESHOLD = -5000  # Catastrophic = -50k (safety valve for broken simulations)
 MAX_STEPS_THRESHOLD = 1000
 
 # OpenScope scoring events and their point values
