@@ -3,10 +3,16 @@ Reward calculation module for OpenScope RL environment.
 
 This module provides the RewardCalculator class for computing rewards
 based on game state changes and configurable reward shaping.
+
+Enhanced with:
+- Trajectory prediction for immediate feedback
+- Dense separation tracking
+- Command-consequence attribution
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+import math
+from typing import Any, Dict, List, Optional, Tuple
 from abc import ABC, abstractmethod
 
 from .config import RewardConfig
@@ -14,6 +20,208 @@ from .exceptions import RewardCalculationError
 
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# TRAJECTORY PREDICTION UTILITIES
+# ============================================================================
+
+def predict_position(aircraft: Dict[str, Any], time_seconds: float) -> Tuple[float, float, float]:
+    """
+    Predict aircraft position after given time.
+    
+    Simple kinematic prediction assuming constant heading and speed.
+    
+    Args:
+        aircraft: Aircraft state dictionary
+        time_seconds: Time to predict ahead (seconds)
+        
+    Returns:
+        Tuple of (x, y, altitude) in nm and feet
+    """
+    pos = aircraft.get("position", [0, 0])
+    heading = aircraft.get("heading", 0)
+    speed = aircraft.get("speed", 0)  # knots
+    altitude = aircraft.get("altitude", 0)  # hundreds of feet
+    
+    # Convert speed from knots to nm/second
+    speed_nm_per_sec = speed / 3600.0
+    
+    # Calculate displacement
+    heading_rad = math.radians(heading)
+    dx = speed_nm_per_sec * time_seconds * math.sin(heading_rad)
+    dy = speed_nm_per_sec * time_seconds * math.cos(heading_rad)
+    
+    # Predict position
+    future_x = pos[0] + dx
+    future_y = pos[1] + dy
+    future_alt = altitude  # Assume constant altitude for short predictions
+    
+    return (future_x, future_y, future_alt)
+
+
+def calculate_distance_3d(pos1: Tuple[float, float, float], 
+                          pos2: Tuple[float, float, float]) -> float:
+    """
+    Calculate 3D distance between two positions.
+    
+    Args:
+        pos1: (x, y, altitude) in nm and hundreds of feet
+        pos2: (x, y, altitude) in nm and hundreds of feet
+        
+    Returns:
+        Distance in nautical miles (horizontal + vertical component)
+    """
+    # Horizontal distance
+    dx = pos1[0] - pos2[0]
+    dy = pos1[1] - pos2[1]
+    horizontal_dist = math.sqrt(dx*dx + dy*dy)
+    
+    # Vertical distance (convert hundreds of feet to nm: 1nm = 6076ft)
+    dalt_feet = abs(pos1[2] - pos2[2]) * 100
+    vertical_dist_nm = dalt_feet / 6076.0
+    
+    # Combined 3D distance
+    return math.sqrt(horizontal_dist**2 + vertical_dist_nm**2)
+
+
+def predict_future_conflicts(aircraft_data: List[Dict[str, Any]], 
+                             prediction_horizons: List[float] = [30, 60]) -> List[Dict[str, Any]]:
+    """
+    Predict future conflicts by simulating aircraft trajectories.
+    
+    Args:
+        aircraft_data: List of aircraft state dictionaries
+        prediction_horizons: Time horizons to check (seconds)
+        
+    Returns:
+        List of predicted conflict dictionaries with fields:
+        - ac1_id, ac2_id: Aircraft IDs
+        - time_to_conflict: Seconds until conflict
+        - predicted_distance: Predicted closest approach (nm)
+        - severity: 0.0-1.0 conflict severity
+    """
+    predicted_conflicts = []
+    
+    for horizon in prediction_horizons:
+        # Predict all aircraft positions
+        future_positions = {}
+        for ac in aircraft_data:
+            ac_id = ac.get("callsign", "")
+            if ac_id:
+                future_positions[ac_id] = predict_position(ac, horizon)
+        
+        # Check all pairs for conflicts
+        aircraft_ids = list(future_positions.keys())
+        for i in range(len(aircraft_ids)):
+            for j in range(i + 1, len(aircraft_ids)):
+                ac1_id = aircraft_ids[i]
+                ac2_id = aircraft_ids[j]
+                
+                pos1 = future_positions[ac1_id]
+                pos2 = future_positions[ac2_id]
+                
+                predicted_dist = calculate_distance_3d(pos1, pos2)
+                
+                # Conflict if predicted distance < 5nm
+                if predicted_dist < 5.0:
+                    severity = (5.0 - predicted_dist) / 5.0
+                    
+                    predicted_conflicts.append({
+                        'ac1_id': ac1_id,
+                        'ac2_id': ac2_id,
+                        'time_to_conflict': horizon,
+                        'predicted_distance': predicted_dist,
+                        'severity': severity,
+                    })
+    
+    return predicted_conflicts
+
+
+def calculate_separation_changes(state: Dict[str, Any], 
+                                 prev_state: Dict[str, Any],
+                                 action: Optional[Dict[str, int]] = None) -> Dict[str, float]:
+    """
+    Calculate separation changes for all aircraft pairs.
+    
+    If an action was taken, specifically tracks the commanded aircraft's
+    separation changes to attribute consequences to the command.
+    
+    Args:
+        state: Current game state
+        prev_state: Previous game state  
+        action: Action taken (if any)
+        
+    Returns:
+        Dictionary with separation change metrics
+    """
+    curr_aircraft = state.get("aircraft", [])
+    prev_aircraft = prev_state.get("aircraft", [])
+    
+    # Build lookup by callsign
+    curr_by_id = {ac.get("callsign"): ac for ac in curr_aircraft}
+    prev_by_id = {ac.get("callsign"): ac for ac in prev_aircraft}
+    
+    # Track separation changes
+    improvements = []
+    deteriorations = []
+    commanded_aircraft_id = None
+    
+    if action:
+        # Extract commanded aircraft ID from action
+        # This would need to be passed from the environment
+        commanded_aircraft_id = action.get("aircraft_id")
+    
+    # Check all pairs that exist in both states
+    common_ids = set(curr_by_id.keys()) & set(prev_by_id.keys())
+    ids_list = list(common_ids)
+    
+    for i in range(len(ids_list)):
+        for j in range(i + 1, len(ids_list)):
+            id1, id2 = ids_list[i], ids_list[j]
+            
+            # Current separation
+            curr_pos1 = curr_by_id[id1].get("position", [0, 0])
+            curr_pos2 = curr_by_id[id2].get("position", [0, 0])
+            curr_dist = math.sqrt(
+                (curr_pos1[0] - curr_pos2[0])**2 + 
+                (curr_pos1[1] - curr_pos2[1])**2
+            )
+            
+            # Previous separation
+            prev_pos1 = prev_by_id[id1].get("position", [0, 0])
+            prev_pos2 = prev_by_id[id2].get("position", [0, 0])
+            prev_dist = math.sqrt(
+                (prev_pos1[0] - prev_pos2[0])**2 + 
+                (prev_pos1[1] - prev_pos2[1])**2
+            )
+            
+            # Calculate change
+            sep_change = curr_dist - prev_dist
+            
+            # Track if commanded aircraft was involved
+            involves_commanded = commanded_aircraft_id in [id1, id2]
+            
+            if sep_change > 0.1:  # Improved by >0.1nm
+                improvements.append({
+                    'pair': (id1, id2),
+                    'change': sep_change,
+                    'current_dist': curr_dist,
+                    'attributed': involves_commanded
+                })
+            elif sep_change < -0.1:  # Worsened by >0.1nm
+                deteriorations.append({
+                    'pair': (id1, id2),
+                    'change': sep_change,
+                    'current_dist': curr_dist,
+                    'attributed': involves_commanded
+                })
+    
+    return {
+        'improvements': improvements,
+        'deteriorations': deteriorations,
+        'commanded_aircraft': commanded_aircraft_id,
+    }
 
 
 class RewardStrategy(ABC):
@@ -202,6 +410,162 @@ class EfficiencyFocusedRewardStrategy(RewardStrategy):
         return reward
 
 
+class PredictiveRewardStrategy(RewardStrategy):
+    """
+    Enhanced reward strategy with trajectory prediction and credit assignment.
+    
+    Key features:
+    1. Predicts future conflicts (30s, 60s ahead) for immediate feedback
+    2. Tracks separation changes for all aircraft pairs
+    3. Attributes consequences to commanded aircraft
+    4. Dense rewards for maintaining/improving separation
+    
+    This dramatically improves credit assignment by giving IMMEDIATE feedback
+    about command quality, rather than waiting 50+ steps for conflicts to manifest.
+    """
+    
+    def __init__(self, config: RewardConfig):
+        """
+        Initialize predictive reward strategy.
+        
+        Args:
+            config: Reward configuration
+        """
+        self.config = config
+    
+    def calculate_reward(self, state: Dict[str, Any], prev_state: Dict[str, Any], 
+                        action: Optional[Dict[str, int]] = None) -> float:
+        """
+        Calculate reward with predictive feedback and credit assignment.
+        
+        Args:
+            state: Current game state
+            prev_state: Previous game state
+            action: Action taken (optional, should include 'aircraft_id')
+            
+        Returns:
+            Calculated reward
+        """
+        reward = 0.0
+        
+        # ====================================================================
+        # 1. BASE REWARDS (from game state)
+        # ====================================================================
+        
+        # Score change from OpenScope
+        score_change = state.get("score", 0) - prev_state.get("score", 0)
+        reward += score_change
+        
+        # Time penalty
+        reward += self.config.timestep_penalty
+        
+        # Action reward
+        if action is not None:
+            reward += self.config.action_reward
+        
+        # ====================================================================
+        # 2. CURRENT CONFLICTS (graduated penalties)
+        # ====================================================================
+        
+        conflicts = state.get("conflicts", [])
+        CRITICAL_DISTANCE = 5.0
+        
+        for conflict in conflicts:
+            distance = conflict.get("distance", float('inf'))
+            
+            if distance < CRITICAL_DISTANCE:
+                severity = (CRITICAL_DISTANCE - distance) / CRITICAL_DISTANCE
+                reward += self.config.conflict_warning * severity * 5
+            
+            if conflict.get("hasViolation"):
+                reward += self.config.separation_loss
+        
+        # ====================================================================
+        # 3. PREDICTIVE CONFLICT DETECTION (IMMEDIATE FEEDBACK)
+        # ====================================================================
+        
+        curr_aircraft = state.get("aircraft", [])
+        
+        if len(curr_aircraft) > 1:
+            # Predict conflicts 30s and 60s ahead
+            predicted_conflicts = predict_future_conflicts(
+                curr_aircraft, 
+                prediction_horizons=[30, 60]
+            )
+            
+            for pred_conflict in predicted_conflicts:
+                severity = pred_conflict['severity']
+                time_to_conflict = pred_conflict['time_to_conflict']
+                
+                # IMMEDIATE penalty scaled by severity and time
+                # Closer conflicts = higher penalty
+                time_factor = 2.0 if time_to_conflict <= 30 else 1.0
+                
+                # Give immediate feedback about this command's future consequences
+                penalty = -5.0 * severity * time_factor
+                reward += penalty
+                
+                # Extra penalty if commanded aircraft is involved
+                if action:
+                    commanded_id = action.get("aircraft_id")
+                    if commanded_id in [pred_conflict['ac1_id'], pred_conflict['ac2_id']]:
+                        reward -= 5.0 * severity  # Double penalty for commanded aircraft
+        
+        # ====================================================================
+        # 4. DENSE SEPARATION TRACKING (command-consequence attribution)
+        # ====================================================================
+        
+        sep_changes = calculate_separation_changes(state, prev_state, action)
+        
+        # Reward improvements in separation
+        for improvement in sep_changes['improvements']:
+            change = improvement['change']
+            attributed = improvement['attributed']
+            
+            # Base reward for any improvement
+            reward += 0.5 * min(change, 2.0)  # Cap at 2nm improvement
+            
+            # BONUS if this was due to our command
+            if attributed:
+                reward += 1.5 * min(change, 2.0)
+        
+        # Penalize deteriorations in separation
+        for deterioration in sep_changes['deteriorations']:
+            change = abs(deterioration['change'])
+            current_dist = deterioration['current_dist']
+            attributed = deterioration['attributed']
+            
+            # Penalty scaled by how close they are getting
+            if current_dist < 7.0:  # Within 7nm buffer
+                proximity_factor = (7.0 - current_dist) / 7.0
+                penalty = -2.0 * change * (1.0 + proximity_factor)
+                reward += penalty
+                
+                # EXTRA penalty if this was due to our command
+                if attributed:
+                    reward += penalty * 2.0  # Triple total penalty
+        
+        # ====================================================================
+        # 5. SAFE SEPARATION MAINTENANCE
+        # ====================================================================
+        
+        # Reward maintaining safe separation (no conflicts)
+        if len(conflicts) == 0 and len(curr_aircraft) > 0:
+            reward += self.config.safe_separation_bonus * len(curr_aircraft)
+        
+        # ====================================================================
+        # 6. AIRCRAFT EXITS
+        # ====================================================================
+        
+        prev_aircraft = prev_state.get("aircraft", [])
+        aircraft_exited = len(prev_aircraft) - len(curr_aircraft)
+        
+        if aircraft_exited > 0:
+            reward += self.config.successful_exit_bonus * aircraft_exited
+        
+        return reward
+
+
 class RewardCalculator:
     """
     Calculates rewards based on game state changes.
@@ -341,13 +705,17 @@ class RewardCalculator:
         }
 
 
-def create_reward_calculator(config: RewardConfig, strategy_name: str = "default") -> RewardCalculator:
+def create_reward_calculator(config: RewardConfig, strategy_name: str = "predictive") -> RewardCalculator:
     """
     Create reward calculator with specified strategy.
     
     Args:
         config: Reward configuration
-        strategy_name: Name of strategy ("default", "safety", "efficiency")
+        strategy_name: Name of strategy:
+            - "default": Basic reward shaping with graduated penalties
+            - "predictive": (RECOMMENDED) Trajectory prediction + credit assignment
+            - "safety": Focus on minimizing conflicts
+            - "efficiency": Focus on maximizing throughput
         
     Returns:
         RewardCalculator instance
@@ -357,6 +725,7 @@ def create_reward_calculator(config: RewardConfig, strategy_name: str = "default
     """
     strategies = {
         "default": DefaultRewardStrategy,
+        "predictive": PredictiveRewardStrategy,  # NEW: Recommended for curriculum learning
         "safety": SafetyFocusedRewardStrategy,
         "efficiency": EfficiencyFocusedRewardStrategy,
     }
@@ -367,5 +736,7 @@ def create_reward_calculator(config: RewardConfig, strategy_name: str = "default
     
     strategy_class = strategies[strategy_name]
     strategy = strategy_class(config)
+    
+    logger.info(f"Created reward calculator with '{strategy_name}' strategy")
     
     return RewardCalculator(config, strategy)

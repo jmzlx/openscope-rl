@@ -56,7 +56,7 @@ class PlaywrightEnv(gym.Env):
         action_interval: float = 5.0,
         headless: bool = True,
         config: Optional[Dict[str, Any]] = None,
-        reward_strategy: str = "default",
+        reward_strategy: str = "predictive",  # Changed from "default" to use trajectory prediction
     ):
         """
         Initialize OpenScope environment.
