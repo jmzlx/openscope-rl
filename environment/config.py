@@ -142,7 +142,7 @@ class OpenScopeConfig:
     
     # Observation settings
     max_aircraft: int = 20
-    aircraft_feature_dim: int = 14
+    aircraft_feature_dim: int = 20  # Enhanced from 14 to 20 (added 6 new features)
     global_state_dim: int = 4
     
     # Component configurations
