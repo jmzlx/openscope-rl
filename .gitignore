@@ -20,6 +20,12 @@ logs/
 evaluation_results/
 training_plots/
 
+# TensorBoard logs
+**/tensorboard_logs/
+**/tb_logs/
+**/runs/
+*.tfevents*
+
 # IDEs
 .vscode/
 .idea/
