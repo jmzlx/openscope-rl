@@ -306,6 +306,12 @@ class PlaywrightEnv(gym.Env):
                 logger.error(f"Game readiness check failed. Game info: {game_info}")
                 raise GameInterfaceError("Game failed to become ready after extended wait")
             
+            # NOW inject spawn control script (after game is ready and objects are loaded)
+            self.browser_manager.inject_aircraft_spawn_limit_script(self.config.max_aircraft)
+            
+            # Verify spawn limit script is working
+            self._verify_spawn_limit_script()
+            
             self._is_initialized = True
             logger.info("Browser initialization completed")
             
@@ -313,6 +319,29 @@ class PlaywrightEnv(gym.Env):
             logger.error(f"Failed to initialize browser: {e}")
             self.cleanup()
             raise BrowserError(f"Browser initialization failed: {e}") from e
+    
+    def _verify_spawn_limit_script(self) -> None:
+        """Verify that the aircraft spawn control script is working."""
+        try:
+            result = self.browser_manager.page.evaluate("""
+                ({
+                    active: window._rlSpawnAircraft !== undefined && window._rlOriginalRates !== undefined,
+                    maxAircraft: window._rlMaxAircraft,
+                    currentCount: window.aircraftController?.aircraft?.list?.length || 0,
+                    patternsDisabled: window.SpawnPatternCollection?.spawnPatternModels?.filter(p => p.rate === 0).length || 0
+                })
+            """)
+            
+            if result and result.get('active'):
+                logger.info(
+                    f"✅ Traffic control active: max={result.get('maxAircraft')}, "
+                    f"current={result.get('currentCount')}, "
+                    f"disabled_patterns={result.get('patternsDisabled')}"
+                )
+            else:
+                logger.warning("⚠️ Traffic control not active!")
+        except Exception as e:
+            logger.warning(f"Could not verify spawn control script: {e}")
     
     def _update_episode_metrics(self, state: Dict[str, Any], reward: float) -> None:
         """Update episode metrics with current state."""

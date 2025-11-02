@@ -293,3 +293,93 @@ JS_GET_OPTIMAL_GAME_STATE_SCRIPT = """
     };
 })();
 """
+
+# JavaScript script to control aircraft spawning using OpenScope's native traffic system
+# This script is executed AFTER the game is ready, so all objects are available
+# Note: {MAX_AIRCRAFT} will be replaced with the actual value before injection
+JS_LIMIT_AIRCRAFT_SPAWNING_SCRIPT = """
+(function() {
+    console.log('[RL] Spawn control starting, max_aircraft={MAX_AIRCRAFT}');
+    
+    if (!window.SpawnPatternCollection || !window.aircraftController) {
+        console.error('[RL] ERROR: Game objects not available!');
+        return;
+    }
+    
+    window._rlMaxAircraft = {MAX_AIRCRAFT};
+    
+    // Store original rates and disable all spawning
+    window._rlOriginalRates = new Map();
+    const patterns = window.SpawnPatternCollection.spawnPatternModels || [];
+    
+    console.log(`[RL] Found ${patterns.length} spawn patterns:`);
+    patterns.forEach(pattern => {
+        window._rlOriginalRates.set(pattern.id, pattern.rate);
+        console.log(`  - ${pattern.id}: rate=${pattern.rate} → 0`);
+        pattern.rate = 0;
+    });
+    
+    console.log(`[RL] ✅ Auto-spawning DISABLED (${patterns.length} patterns)`);
+    
+    // Helper to manually spawn aircraft
+    window._rlSpawnAircraft = (count) => {
+        const availablePatterns = patterns.filter(p => window._rlOriginalRates.get(p.id) > 0);
+        if (availablePatterns.length === 0) {
+            console.error('[RL] ERROR: No spawn patterns with original rate > 0!');
+            return 0;
+        }
+        
+        let spawned = 0;
+        for (let i = 0; i < count; i++) {
+            const currentCount = window.aircraftController.aircraft?.list?.length || 0;
+            if (currentCount >= window._rlMaxAircraft) {
+                console.log(`[RL] At limit: ${currentCount}/${window._rlMaxAircraft}`);
+                break;
+            }
+            
+            const pattern = availablePatterns[i % availablePatterns.length];
+            console.log(`[RL] Spawning aircraft ${i+1}/${count} (pattern: ${pattern.id})`);
+            window.aircraftController.createAircraftWithSpawnPatternModel(pattern);
+            spawned++;
+        }
+        
+        const finalCount = window.aircraftController.aircraft?.list?.length || 0;
+        console.log(`[RL] ✅ Spawned ${spawned} aircraft (total: ${finalCount}/${window._rlMaxAircraft})`);
+        return spawned;
+    };
+    
+    // Monitor and enforce limit continuously
+    window._rlEnforceLimit = () => {
+        const currentCount = window.aircraftController?.aircraft?.list?.length || 0;
+        
+        // Spawn more if below limit
+        if (currentCount < window._rlMaxAircraft) {
+            const needed = window._rlMaxAircraft - currentCount;
+            console.log(`[RL] ⬇️ Below limit (${currentCount}/${window._rlMaxAircraft}), spawning ${needed}`);
+            window._rlSpawnAircraft(needed);
+        }
+        
+        // Re-enforce rate=0 to prevent OpenScope from re-enabling spawns
+        const patterns = window.SpawnPatternCollection?.spawnPatternModels || [];
+        let reDisabled = 0;
+        patterns.forEach(p => { 
+            if (p.rate > 0) {
+                p.rate = 0;
+                reDisabled++;
+            }
+        });
+        if (reDisabled > 0) {
+            console.warn(`[RL] ⚠️ Re-disabled ${reDisabled} patterns (OpenScope tried to re-enable them)`);
+        }
+    };
+    
+    // Initial spawn
+    console.log('[RL] Initial spawn...');
+    window._rlSpawnAircraft(window._rlMaxAircraft);
+    
+    // Monitor every 2 seconds
+    setInterval(window._rlEnforceLimit, 2000);
+    
+    console.log('[RL] ✅ Spawn control active');
+})();
+"""

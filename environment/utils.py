@@ -268,6 +268,36 @@ class BrowserManager:
             logger.error(f"Failed to inject time tracking script: {e}")
             raise BrowserError(f"Script injection failed: {e}") from e
     
+    def inject_aircraft_spawn_limit_script(self, max_aircraft: int) -> None:
+        """
+        Inject JavaScript to control aircraft spawning using OpenScope's native system.
+        
+        This uses OpenScope's traffic rate mechanism: sets all spawn pattern rates to 0
+        (which disables ALL automatic spawning, including pre-spawn), then manually
+        spawns exactly max_aircraft using OpenScope's native spawn API.
+        
+        This is the simplest and most reliable approach as it uses OpenScope's
+        intended traffic control system rather than monkey-patching.
+        
+        Args:
+            max_aircraft: Number of aircraft to spawn and maintain in the airspace
+        """
+        if not self.page:
+            raise BrowserError("Page not initialized")
+        
+        from .constants import JS_LIMIT_AIRCRAFT_SPAWNING_SCRIPT
+        
+        # Replace {MAX_AIRCRAFT} placeholder with actual value
+        script = JS_LIMIT_AIRCRAFT_SPAWNING_SCRIPT.replace("{MAX_AIRCRAFT}", str(max_aircraft))
+        
+        try:
+            # Evaluate the script now (page is already loaded and game is ready)
+            self.page.evaluate(script)
+            logger.info(f"Spawn control script executed (max_aircraft={max_aircraft})")
+        except Exception as e:
+            logger.error(f"Failed to execute aircraft spawn control script: {e}")
+            raise BrowserError(f"Script execution failed: {e}") from e
+    
     def inject_event_hook_script(self) -> None:
         """
         Inject JavaScript to hook OpenScope scoring events.
