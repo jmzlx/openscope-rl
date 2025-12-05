@@ -19,6 +19,7 @@ checkpoints/
 logs/
 evaluation_results/
 training_plots/
+results/
 
 # TensorBoard logs
 **/tensorboard_logs/

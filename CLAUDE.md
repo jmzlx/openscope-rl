@@ -184,8 +184,53 @@ Multiple reward calculation strategies available:
 - `"default"` - Balanced safety and performance
 - `"safety"` - Heavily prioritizes conflict avoidance
 - `"efficiency"` - Emphasizes throughput and aircraft exits
+- `"progress"` - Continuous progress rewards (distance, altitude compliance, waypoint advancement)
 
-Change strategy: `env.set_reward_strategy("safety")`
+Change strategy: `env.set_reward_strategy("progress")`
+
+### Hyperparameter Optimization
+
+Use `training.hyperparam_tuner.HyperparamTuner` for Optuna-based systematic hyperparameter optimization:
+
+```python
+from training.hyperparam_tuner import HyperparamTuner
+
+tuner = HyperparamTuner(
+    algo="ppo",
+    env_factory=env_factory,
+    model_factory=model_factory,
+    n_trials=50,
+    sampler="tpe",
+    pruner="halving",
+)
+results = tuner.optimize()
+```
+
+### Performance Benchmarking
+
+Use `experiments.performance_benchmark` for measuring environment and model performance:
+
+```python
+from experiments.performance_benchmark import benchmark_env_performance, benchmark_model_inference
+
+env_metrics = benchmark_env_performance(env, n_steps=10000)
+model_metrics = benchmark_model_inference(model, env, n_steps=1000)
+```
+
+### Configuration Logging
+
+Use `training.config_logger` for saving and loading training configurations with reproducibility:
+
+```python
+from training.config_logger import save_training_config, load_training_config
+
+save_training_config(
+    save_dir="experiments/run_001",
+    model_config={"learning_rate": 3e-4, ...},
+    env_config={"airport": "KLAS", ...},
+    training_config={"total_timesteps": 1000000, ...},
+)
+```
 
 ## Modifying the Environment
 

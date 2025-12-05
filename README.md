@@ -40,7 +40,13 @@ uv run playwright install chromium
 ### 3. Run Demo
 
 ```bash
-# Open the exploration notebook
+# Option 1: Interactive environment demo
+python scripts/demo_env.py --airport KLAS --max-aircraft 10
+
+# Option 2: Evaluate a trained model
+python scripts/evaluate_model.py --model-path checkpoints/ppo_model.zip --n-episodes 10
+
+# Option 3: Open the exploration notebook
 jupyter notebook notebooks/00_explore_openscope_api.ipynb
 ```
 
@@ -181,6 +187,13 @@ The environment supports multiple reward strategies:
 - Higher rewards for quick exits
 - Lower penalties for minor conflicts
 - Emphasis on throughput
+
+**Progress Strategy:**
+- Continuous rewards for distance progress (arrivals/departures)
+- Altitude compliance with flight plans
+- Approach establishment bonuses (on final, on glidepath)
+- Waypoint advancement rewards
+- Combined with safety rewards for balanced learning
 
 Custom reward strategies can be implemented by subclassing `RewardCalculator`.
 
@@ -366,6 +379,36 @@ episodes = collector.collect_custom_policy_episodes(
    jupyter notebook openscope_async_demo.ipynb
    ```
 
+## 🔧 Hyperparameter Optimization
+
+Use Optuna-based hyperparameter tuning for systematic optimization:
+
+```python
+from training.hyperparam_tuner import HyperparamTuner
+
+def env_factory(n_envs=1):
+    from stable_baselines3.common.vec_env import DummyVecEnv
+    from environment import PlaywrightEnv
+    return DummyVecEnv([lambda: PlaywrightEnv(airport="KLAS", max_aircraft=10)] * n_envs)
+
+def model_factory(env, hyperparams):
+    from stable_baselines3 import PPO
+    return PPO("MultiInputPolicy", env, **hyperparams)
+
+tuner = HyperparamTuner(
+    algo="ppo",
+    env_factory=env_factory,
+    model_factory=model_factory,
+    n_trials=50,
+    n_timesteps=100000,
+    sampler="tpe",  # Tree-structured Parzen Estimator
+    pruner="halving",  # Successive Halving
+)
+
+results = tuner.optimize()
+print(results.head())  # View best hyperparameters
+```
+
 ## 🧠 Training Approaches
 
 This project implements multiple RL approaches for comparison:
@@ -436,24 +479,17 @@ This project implements multiple RL approaches for comparison:
 - Sample-efficient learning
 - **Notebook**: `notebooks/10_dreamerv3_demo.ipynb`
 
-See `EXPERIMENT_ROADMAP.md` for detailed comparison and implementation guides.
 
 ## 📚 Documentation
 
 ### Main Documentation
 - `README.md` (this file) - Overview and quick start
-- `EXPERIMENT_ROADMAP.md` - Multi-approach experiment plan
-- `QUICK_START.md` - Getting started guide
 - `TESTING.md` - Testing framework
-- `README_EXPERIMENTS.md` - Experiment tracking
 
 ### Notebooks
 - `notebooks/00_explore_openscope_api.ipynb` - Environment exploration
 - `notebooks/01-10_*.ipynb` - Approach-specific demos (see above)
 
-### Environment Documentation
-- `environment/STATEPROCESSOR_EVALUATION.md` - State processing details
-- `notebooks/MISSING_DATA_ANALYSIS.md` - Data availability analysis
 
 ## 🏗️ Architecture
 
@@ -537,6 +573,19 @@ The environment is built with a modular architecture for maintainability and ext
 - GAE computation
 - Policy optimization
 
+**`training/hyperparam_tuner.py`** - Hyperparameter optimization
+- Optuna-based systematic tuning
+- Algorithm-specific samplers (PPO, Decision Transformer)
+- Pruning support (SuccessiveHalving, Median)
+- Periodic evaluation during training
+- Proper error handling and resource cleanup
+
+**`training/config_logger.py`** - Configuration tracking
+- YAML-based config saving/loading
+- Git hash, branch, Python version tracking
+- Dependency version tracking
+- Reproducibility support
+
 **`training/dt_trainer.py`** - Decision Transformer training
 - Sequence modeling
 - Return conditioning
@@ -597,12 +646,32 @@ results = run_benchmark(
 )
 ```
 
+**Performance Benchmarking:**
+```python
+from experiments.performance_benchmark import (
+    benchmark_env_performance,
+    benchmark_model_inference,
+    run_all_benchmarks
+)
+
+# Benchmark environment FPS and throughput
+env_metrics = benchmark_env_performance(env, n_steps=10000)
+
+# Benchmark model inference speed
+model_metrics = benchmark_model_inference(model, env, n_steps=1000)
+
+# Run all benchmarks
+all_metrics = run_all_benchmarks(env, model)
+```
+
 Metrics tracked:
 - Success rate (% aircraft exited safely)
 - Violation count
 - Average reward
 - Commands per aircraft
 - Episode length
+- Environment FPS and throughput
+- Model inference speed
 
 ## 🤝 Contributing
 
@@ -677,7 +746,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 1. **Run the exploration notebook**: `notebooks/00_explore_openscope_api.ipynb`
 2. **Try a training demo**: Start with `notebooks/01_baseline_ppo_demo.ipynb`
 3. **Collect data**: Use `data/training_data_collector.py`
-4. **Explore approaches**: See `EXPERIMENT_ROADMAP.md` for all methods
+4. **Explore approaches**: See training notebooks in `notebooks/` directory
 5. **Benchmark your agent**: Use `experiments/benchmark.py`
 
 Happy training! ✈️🎮
