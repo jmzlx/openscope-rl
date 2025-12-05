@@ -12,7 +12,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
+
+import torch
+import numpy as np
 
 # Colors for output
 GREEN = "\033[92m"
@@ -212,6 +215,285 @@ def test_performance_benchmark() -> bool:
         return False
 
 
+def test_tdmpc2_imports() -> bool:
+    """Test that all TD-MPC 2 components can be imported."""
+    print_test("TD-MPC 2 imports")
+    try:
+        from models.tdmpc2 import (
+            TDMPC2Model,
+            TDMPC2Config,
+            LatentEncoder,
+            TransformerDynamics,
+            RewardPredictor,
+            TDMPC2QNetwork,
+        )
+        from training.tdmpc2_planner import MPCPlanner, MPCPlannerConfig
+        from training.tdmpc2_trainer import TDMPC2Trainer, TDMPC2TrainingConfig, ReplayBuffer
+        print_success("All imports successful")
+        return True
+    except Exception as e:
+        print_error(f"Import failed: {e}")
+        return False
+
+
+def test_tdmpc2_config_creation() -> tuple:
+    """Test config creation. Returns (success, configs) tuple."""
+    print_test("TD-MPC 2 config creation")
+    try:
+        from models.tdmpc2 import TDMPC2Config
+        from training.tdmpc2_planner import MPCPlannerConfig
+        from training.tdmpc2_trainer import TDMPC2TrainingConfig
+        
+        model_config = TDMPC2Config(
+            max_aircraft=10,
+            latent_dim=256,  # Smaller for smoke test
+            encoder_hidden_dim=128,
+            dynamics_hidden_dim=256,
+            device="cpu",  # Force CPU for smoke test to avoid MPS issues
+        )
+        planner_config = MPCPlannerConfig(
+            planning_horizon=3,  # Shorter for smoke test
+            num_samples=32,  # Fewer samples for speed
+            num_elites=8,
+            num_iterations=2,
+            device="cpu",  # Force CPU for smoke test
+        )
+        training_config = TDMPC2TrainingConfig(
+            model_config=model_config,
+            planner_config=planner_config,
+            num_steps=100,  # Small for smoke test
+            batch_size=4,
+        )
+        print_success("Configs created successfully")
+        return True, (model_config, planner_config, training_config)
+    except Exception as e:
+        print_error(f"Config creation failed: {e}")
+        return False, (None, None, None)
+
+
+def test_tdmpc2_model_instantiation(model_config) -> tuple:
+    """Test model instantiation. Returns (success, model, param_count) tuple."""
+    print_test("TD-MPC 2 model instantiation")
+    try:
+        from models.tdmpc2 import TDMPC2Model
+        
+        model = TDMPC2Model(model_config)
+        param_count = sum(p.numel() for p in model.parameters())
+        print_success(f"Model created with {param_count:,} parameters")
+        return True, model, param_count
+    except Exception as e:
+        print_error(f"Model creation failed: {e}")
+        return False, None, 0
+
+
+def test_tdmpc2_encoder_forward_pass(model, model_config) -> tuple:
+    """Test encoder forward pass. Returns (success, latent) tuple."""
+    print_test("TD-MPC 2 encoder forward pass")
+    try:
+        device = model_config.device
+        batch_size = 2
+        max_aircraft = model_config.max_aircraft
+        aircraft = torch.randn(batch_size, max_aircraft, model_config.aircraft_feature_dim).to(device)
+        aircraft_mask = torch.ones(batch_size, max_aircraft, dtype=torch.bool).to(device)
+        global_state = torch.randn(batch_size, model_config.global_feature_dim).to(device)
+        
+        latent = model.encode(aircraft, aircraft_mask, global_state)
+        assert latent.shape == (batch_size, model_config.latent_dim), \
+            f"Expected latent shape ({batch_size}, {model_config.latent_dim}), got {latent.shape}"
+        print_success(f"Encoder forward pass successful: {latent.shape}")
+        return True, latent
+    except Exception as e:
+        print_error(f"Encoder forward pass failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False, None
+
+
+def test_tdmpc2_dynamics_reward_forward_pass(model, model_config, latent, device) -> bool:
+    """Test dynamics, reward, and Q-network forward passes."""
+    print_test("TD-MPC 2 dynamics/reward forward pass")
+    try:
+        batch_size = latent.size(0)
+        action = torch.randn(batch_size, model_config.action_dim).to(device)
+        
+        next_latent = model.dynamics(latent, action)
+        assert next_latent.shape == (batch_size, model_config.latent_dim), \
+            f"Expected next_latent shape ({batch_size}, {model_config.latent_dim}), got {next_latent.shape}"
+        
+        reward = model.reward(next_latent)
+        assert reward.shape == (batch_size, 1), \
+            f"Expected reward shape ({batch_size}, 1), got {reward.shape}"
+        
+        q_value = model.q_network(latent, action)
+        assert q_value.shape == (batch_size, 1), \
+            f"Expected q_value shape ({batch_size}, 1), got {q_value.shape}"
+        
+        print_success("Dynamics, reward, and Q-network forward passes successful")
+        return True
+    except Exception as e:
+        print_error(f"Forward pass failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_tdmpc2_mpc_planner(model, planner_config, model_config, device) -> bool:
+    """Test MPC planner."""
+    print_test("TD-MPC 2 MPC planner")
+    try:
+        from training.tdmpc2_planner import MPCPlanner
+        
+        planner = MPCPlanner(model, planner_config)
+        
+        # Create test inputs
+        batch_size = 2
+        max_aircraft = model_config.max_aircraft
+        aircraft = torch.randn(batch_size, max_aircraft, model_config.aircraft_feature_dim).to(device)
+        aircraft_mask = torch.ones(batch_size, max_aircraft, dtype=torch.bool).to(device)
+        global_state = torch.randn(batch_size, model_config.global_feature_dim).to(device)
+        
+        # Test planning
+        with torch.no_grad():
+            planned_action = planner.plan(aircraft, aircraft_mask, global_state)
+        
+        assert planned_action.shape == (batch_size, model_config.action_dim), \
+            f"Expected action shape ({batch_size}, {model_config.action_dim}), got {planned_action.shape}"
+        print_success(f"MPC planner successful: {planned_action.shape}")
+        return True
+    except Exception as e:
+        print_error(f"MPC planner failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_tdmpc2_replay_buffer(model_config) -> bool:
+    """Test replay buffer."""
+    print_test("TD-MPC 2 replay buffer")
+    try:
+        from training.tdmpc2_trainer import ReplayBuffer
+        
+        buffer = ReplayBuffer(capacity=100, device="cpu")
+        max_aircraft = model_config.max_aircraft
+        
+        # Add some transitions
+        for i in range(5):
+            obs = {
+                "aircraft": np.random.randn(max_aircraft, model_config.aircraft_feature_dim).astype(np.float32),
+                "aircraft_mask": np.ones(max_aircraft, dtype=bool),
+                "global_state": np.random.randn(model_config.global_feature_dim).astype(np.float32),
+            }
+            action = np.random.randn(model_config.action_dim).astype(np.float32)
+            next_obs = {
+                "aircraft": np.random.randn(max_aircraft, model_config.aircraft_feature_dim).astype(np.float32),
+                "aircraft_mask": np.ones(max_aircraft, dtype=bool),
+                "global_state": np.random.randn(model_config.global_feature_dim).astype(np.float32),
+            }
+            buffer.add(obs, action, 0.5, next_obs, False)
+        
+        # Sample batch
+        batch = buffer.sample(3)
+        assert "aircraft" in batch
+        assert batch["aircraft"].shape[0] == 3
+        print_success(f"Replay buffer successful: {len(buffer)} transitions, sampled batch size {batch['aircraft'].shape[0]}")
+        return True
+    except Exception as e:
+        print_error(f"Replay buffer failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_tdmpc2_trainer_initialization(training_config, model_config) -> bool:
+    """Test trainer initialization with mock environment."""
+    print_test("TD-MPC 2 trainer initialization (mock)")
+    try:
+        from training.tdmpc2_trainer import TDMPC2Trainer
+        
+        # Create a simple mock environment for testing
+        class MockEnv:
+            def reset(self):
+                return {
+                    "aircraft": np.random.randn(model_config.max_aircraft, model_config.aircraft_feature_dim).astype(np.float32),
+                    "aircraft_mask": np.ones(model_config.max_aircraft, dtype=bool),
+                    "global_state": np.random.randn(model_config.global_feature_dim).astype(np.float32),
+                }, {}
+            
+            def step(self, action):
+                return {
+                    "aircraft": np.random.randn(model_config.max_aircraft, model_config.aircraft_feature_dim).astype(np.float32),
+                    "aircraft_mask": np.ones(model_config.max_aircraft, dtype=bool),
+                    "global_state": np.random.randn(model_config.global_feature_dim).astype(np.float32),
+                }, 0.0, False, False, {}
+        
+        mock_env = MockEnv()
+        trainer = TDMPC2Trainer(mock_env, training_config)
+        print_success("Trainer initialization successful")
+        print(f"   - Training step: {trainer.training_step}")
+        print(f"   - Environment step: {trainer.env_step}")
+        print(f"   - Replay buffer capacity: {trainer.replay_buffer.capacity}")
+        return True
+    except Exception as e:
+        print_error(f"Trainer initialization failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_tdmpc2_implementation() -> bool:
+    """Test TD-MPC 2 implementation components."""
+    print_test("TD-MPC 2 implementation")
+    
+    # Test 1: Imports
+    if not test_tdmpc2_imports():
+        print_error("Import test failed - cannot continue")
+        return False
+    
+    # Import after test_imports succeeds
+    from models.tdmpc2 import TDMPC2Model, TDMPC2Config
+    from training.tdmpc2_planner import MPCPlannerConfig
+    from training.tdmpc2_trainer import TDMPC2TrainingConfig
+    
+    # Test 2: Config creation
+    success, (model_config, planner_config, training_config) = test_tdmpc2_config_creation()
+    if not success:
+        return False
+    
+    # Test 3: Model instantiation
+    success, model, param_count = test_tdmpc2_model_instantiation(model_config)
+    if not success:
+        return False
+    
+    # Test 4: Encoder forward pass
+    success, latent = test_tdmpc2_encoder_forward_pass(model, model_config)
+    if not success:
+        return False
+    
+    # Test 5: Dynamics and reward forward pass
+    device = model_config.device
+    success = test_tdmpc2_dynamics_reward_forward_pass(model, model_config, latent, device)
+    if not success:
+        return False
+    
+    # Test 6: MPC Planner
+    success = test_tdmpc2_mpc_planner(model, planner_config, model_config, device)
+    if not success:
+        return False
+    
+    # Test 7: Replay Buffer
+    success = test_tdmpc2_replay_buffer(model_config)
+    if not success:
+        return False
+    
+    # Test 8: Trainer initialization
+    success = test_tdmpc2_trainer_initialization(training_config, model_config)
+    if not success:
+        return False
+    
+    print_success("All TD-MPC 2 implementation tests passed")
+    return True
+
+
 def main():
     """Run smoke tests."""
     parser = argparse.ArgumentParser(description="Run smoke tests for OpenScope RL")
@@ -223,7 +505,7 @@ def main():
     parser.add_argument(
         "--tests",
         nargs="+",
-        choices=["demo", "expert", "ppo", "benchmark", "all"],
+        choices=["demo", "expert", "ppo", "benchmark", "tdmpc2", "all"],
         default=["all"],
         help="Which tests to run",
     )
@@ -232,8 +514,9 @@ def main():
     
     print_header("OpenScope RL Smoke Tests")
     
-    # Check if OpenScope is running
-    if not args.skip_openscope_check:
+    # Check if OpenScope is running (skip for TD-MPC 2 test which doesn't need it)
+    skip_openscope = args.skip_openscope_check or ("tdmpc2" in args.tests and len(args.tests) == 1)
+    if not skip_openscope:
         print_test("OpenScope server connection")
         if check_openscope_running():
             print_success("OpenScope is running on localhost:3003")
@@ -254,6 +537,8 @@ def main():
         tests_to_run.append(("PPO Trainer", test_ppo_trainer_short))
     if run_all or "benchmark" in args.tests:
         tests_to_run.append(("Performance Benchmark", test_performance_benchmark))
+    if run_all or "tdmpc2" in args.tests:
+        tests_to_run.append(("TD-MPC 2 Implementation", test_tdmpc2_implementation))
     
     # Run tests
     results = []
