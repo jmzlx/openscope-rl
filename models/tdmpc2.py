@@ -53,6 +53,7 @@ class TDMPC2Config:
     # Dynamics architecture
     dynamics_hidden_dim: int = 512
     dynamics_num_layers: int = 3
+    dynamics_num_heads: int = 8
     dynamics_dropout: float = 0.1
     
     # Action space
@@ -77,6 +78,10 @@ class TDMPC2Config:
             raise ValueError("encoder_hidden_dim must be positive")
         if self.dynamics_hidden_dim <= 0:
             raise ValueError("dynamics_hidden_dim must be positive")
+        if self.dynamics_num_heads <= 0:
+            raise ValueError("dynamics_num_heads must be positive")
+        if self.latent_dim % self.dynamics_num_heads != 0:
+            raise ValueError(f"latent_dim ({self.latent_dim}) must be divisible by dynamics_num_heads ({self.dynamics_num_heads})")
         if not (0.0 <= self.encoder_dropout <= 1.0):
             raise ValueError("encoder_dropout must be in [0.0, 1.0]")
         if self.encoder_hidden_dim % self.encoder_num_heads != 0:
@@ -98,6 +103,7 @@ class TDMPC2Config:
             "encoder_num_layers": self.encoder_num_layers,
             "dynamics_hidden_dim": self.dynamics_hidden_dim,
             "dynamics_num_layers": self.dynamics_num_layers,
+            "dynamics_num_heads": self.dynamics_num_heads,
             "action_dim": self.action_dim,
         }
 
@@ -287,7 +293,7 @@ class TransformerDynamics(nn.Module):
         # Transformer for dynamics
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=config.latent_dim,
-            nhead=8,
+            nhead=config.dynamics_num_heads,
             dim_feedforward=config.dynamics_hidden_dim * 4,
             dropout=config.dynamics_dropout,
             activation="gelu",

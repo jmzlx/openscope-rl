@@ -250,14 +250,32 @@ class TDMPC2TrainingConfig:
             raise ValueError(f"eval_episodes must be positive, got {self.eval_episodes}")
     
     def to_dict(self) -> Dict:
-        """Convert to dictionary for logging."""
+        """
+        Convert to dictionary for logging.
+        
+        Returns:
+            Dictionary containing all training hyperparameters and configs.
+        """
         return {
             "num_steps": self.num_steps,
             "batch_size": self.batch_size,
             "learning_rate_model": self.learning_rate_model,
             "learning_rate_q": self.learning_rate_q,
+            "weight_decay": self.weight_decay,
+            "grad_clip": self.grad_clip,
+            "dynamics_loss_weight": self.dynamics_loss_weight,
+            "reward_loss_weight": self.reward_loss_weight,
+            "q_loss_weight": self.q_loss_weight,
+            "buffer_capacity": self.buffer_capacity,
+            "min_buffer_size": self.min_buffer_size,
+            "collect_steps_per_update": self.collect_steps_per_update,
+            "update_frequency": self.update_frequency,
             "gamma": self.gamma,
             "tau": self.tau,
+            "eval_frequency": self.eval_frequency,
+            "eval_episodes": self.eval_episodes,
+            "save_frequency": self.save_frequency,
+            "log_frequency": self.log_frequency,
             **self.model_config.to_dict(),
             **self.planner_config.to_dict(),
         }
@@ -479,11 +497,14 @@ class TDMPC2Trainer:
         self.episode += 1
         
         if self.config.use_wandb and WANDB_AVAILABLE:
-            wandb.log({
-                "episode/reward": episode_reward,
-                "episode/length": episode_length,
-                "episode/num": self.episode,
-            }, step=self.training_step)
+            try:
+                wandb.log({
+                    "episode/reward": episode_reward,
+                    "episode/length": episode_length,
+                    "episode/num": self.episode,
+                }, step=self.training_step)
+            except Exception as e:
+                logger.error(f"Error logging episode metrics to WandB: {e}", exc_info=True)
     
     def _tensor_to_action(self, action_tensor: np.ndarray) -> Dict[str, int]:
         """
@@ -562,10 +583,31 @@ class TDMPC2Trainer:
         q_values = self.model.q_network(latent, batch["action"])
         
         with torch.no_grad():
-            # Target Q-values
-            # Note: Using the action that was taken (SARSA-style) rather than max_a' Q(s', a')
-            # This is a simplification - for true Q-learning, we'd use the action that maximizes Q(s', a')
-            next_q_values = self.target_q_network(next_latent, batch["action"])
+            # Target Q-values using max_a' Q(s', a') for off-policy Q-learning
+            # Sample candidate actions and take max (more efficient than enumerating all actions)
+            batch_size = next_latent.size(0)
+            num_candidates = 10  # Sample 10 candidate actions per state
+            
+            # Sample random actions in normalized space [-1, 1]
+            candidate_actions = torch.randn(
+                batch_size, num_candidates, self.config.model_config.action_dim,
+                device=next_latent.device
+            )
+            candidate_actions = torch.clamp(candidate_actions, -1.0, 1.0)
+            
+            # Expand next_latent for all candidates: (batch_size, latent_dim) -> (batch_size, num_candidates, latent_dim)
+            next_latent_expanded = next_latent.unsqueeze(1).expand(-1, num_candidates, -1)
+            next_latent_flat = next_latent_expanded.reshape(batch_size * num_candidates, -1)
+            candidate_actions_flat = candidate_actions.reshape(batch_size * num_candidates, -1)
+            
+            # Compute Q-values for all candidates
+            candidate_q_values = self.target_q_network(next_latent_flat, candidate_actions_flat)
+            candidate_q_values = candidate_q_values.reshape(batch_size, num_candidates)
+            
+            # Take max over candidates
+            next_q_values = candidate_q_values.max(dim=1, keepdim=True)[0]
+            
+            # TD target: r + gamma * max_a' Q(s', a') * (1 - done)
             target_q = batch["reward"].unsqueeze(-1) + \
                       self.config.gamma * next_q_values * (~batch["done"]).unsqueeze(-1).float()
         
