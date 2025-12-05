@@ -8,6 +8,7 @@ This package contains training scripts and utilities for various RL approaches:
 - Multi-Agent: MAPPO for multi-agent coordination
 - Decision Transformer: Offline RL with transformer architecture
 - Trajectory Transformer: Model-based planning with transformers
+- TD-MPC 2: Model-based RL with transformer world model and MPC planning
 - Cosmos: Fine-tune NVIDIA Cosmos on OpenScope data
 """
 
@@ -63,6 +64,13 @@ except ImportError:
 try:
     from .tt_trainer import TrajectoryTransformerTrainer, TrainingConfig as TTTrainingConfig, create_trainer
     from .tt_planner import BeamSearchPlanner, PlannerConfig
+except ImportError:
+    pass
+
+# TD-MPC 2
+try:
+    from .tdmpc2_trainer import TDMPC2Trainer, TDMPC2TrainingConfig, ReplayBuffer
+    from .tdmpc2_planner import MPCPlanner, MPCPlannerConfig
 except ImportError:
     pass
 
@@ -126,6 +134,13 @@ __all__ = [
     "create_trainer",
     "BeamSearchPlanner",
     "PlannerConfig",
+    
+    # TD-MPC 2
+    "TDMPC2Trainer",
+    "TDMPC2TrainingConfig",
+    "ReplayBuffer",
+    "MPCPlanner",
+    "MPCPlannerConfig",
     
     # Hyperparameter tuning
     "HyperparamTuner",
