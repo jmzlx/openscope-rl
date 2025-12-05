@@ -309,7 +309,12 @@ class OpenScopeInterface:
 
         except Exception as e:
             logger.warning(f"Failed to get game info: {e}")
-            return {}
+            # Return minimal safe info with error indicator rather than empty dict
+            return {
+                "hasAircraftController": False,
+                "hasScoreElement": False,
+                "error": str(e)
+            }
     
     @property
     def is_initialized(self) -> bool:

@@ -41,13 +41,19 @@ uv run playwright install chromium
 
 ```bash
 # Option 1: Interactive environment demo
-python scripts/demo_env.py --airport KLAS --max-aircraft 10
+uv run python scripts/demo_env.py --airport KLAS --max-aircraft 10
 
 # Option 2: Evaluate a trained model
-python scripts/evaluate_model.py --model-path checkpoints/ppo_model.zip --n-episodes 10
+uv run python scripts/evaluate_model.py --model-path checkpoints/ppo_model.zip --n-episodes 10
 
 # Option 3: Open the exploration notebook
 jupyter notebook notebooks/00_explore_openscope_api.ipynb
+
+# Option 4: Train a PPO model
+uv run python training/ppo_trainer.py --total-timesteps 100000 --n-envs 4
+
+# Option 5: Run smoke tests (verify all entry points work)
+uv run python scripts/smoke_test.py
 ```
 
 ## 📁 Project Structure
@@ -483,8 +489,8 @@ This project implements multiple RL approaches for comparison:
 ## 📚 Documentation
 
 ### Main Documentation
-- `README.md` (this file) - Overview and quick start
-- `TESTING.md` - Testing framework
+- `README.md` (this file) - Overview, quick start, and comprehensive guide
+- `CLAUDE.md` - Development guide for Claude Code
 
 ### Notebooks
 - `notebooks/00_explore_openscope_api.ipynb` - Environment exploration
@@ -684,7 +690,7 @@ Contributions are welcome! Here's how to get started:
    - Add type hints
    - Include docstrings
 4. **Add tests**: Update `tests/` if applicable
-5. **Test your changes**: `pytest tests/`
+5. **Test your changes**: `pytest tests/` or `uv run python scripts/smoke_test.py`
 6. **Submit a pull request**
 
 ### Areas for Contribution
@@ -740,6 +746,23 @@ Contributions are welcome! Here's how to get started:
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🧪 Testing
+
+Run tests to verify everything works:
+
+```bash
+# Run all tests
+pytest tests/
+
+# Run smoke tests (quick verification of entry points)
+uv run python scripts/smoke_test.py
+
+# Run specific test
+pytest tests/test_data_extraction.py -v
+```
+
+**Note**: Some integration tests require OpenScope server running at localhost:3003.
 
 ## 🚀 What's Next?
 

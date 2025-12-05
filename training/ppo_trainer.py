@@ -263,6 +263,9 @@ class CurriculumLearningCallback:
                 print(f"\n{'='*80}")
                 print(f"CURRICULUM STAGE {self.current_stage + 1}: max_aircraft = {max_aircraft}")
                 print(f"{'='*80}\n")
+                print("⚠️  WARNING: Curriculum learning is currently LOGGING ONLY.")
+                print("   The environment max_aircraft is NOT actually changed.")
+                print("   To enable curriculum learning, implement environment recreation.\n")
 
                 # Note: Actually changing max_aircraft requires recreating environments
                 # For now, we just log the transition

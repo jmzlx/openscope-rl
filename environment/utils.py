@@ -608,8 +608,10 @@ def extract_game_state(page: Page) -> Dict[str, Any]:
                 if events or counts:
                     result["events"] = events
                     result["event_counts"] = counts
-        except Exception:
-            pass
+        except Exception as e:
+            # Event draining is optional - log warning but continue
+            # This allows graceful degradation if the event hook fails
+            logger.warning(f"Failed to drain scoring events (non-critical): {e}")
         
         if result is None:
             logger.warning("Game state extraction returned null")

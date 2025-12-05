@@ -282,14 +282,9 @@ obs, info = env_3d.reset()
 
 ## Documentation
 
-**Setup Guides:**
-- [README.md](README.md) - Project overview and quick start
-- [docs/OPENSCOPE_SETUP_FINAL.md](docs/OPENSCOPE_SETUP_FINAL.md) - Detailed OpenScope server setup
-
-**Usage Guides:**
-- [docs/SCORE_AND_MESSAGES_GUIDE.md](docs/SCORE_AND_MESSAGES_GUIDE.md) - Understanding game scoring system
-- [docs/NOTEBOOK_INSTRUCTIONS.md](docs/NOTEBOOK_INSTRUCTIONS.md) - Using Jupyter notebooks
-- [docs/WHERE_TO_SEE_COMMANDS.md](docs/WHERE_TO_SEE_COMMANDS.md) - Command reference
+**Main Documentation:**
+- [README.md](README.md) - Project overview, quick start, and comprehensive guide
+- [CLAUDE.md](CLAUDE.md) - This file - development guide for Claude Code
 
 ## Common Pitfalls
 
