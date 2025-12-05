@@ -66,6 +66,12 @@ try:
 except ImportError:
     pass
 
+# Hyperparameter tuning
+try:
+    from .hyperparam_tuner import HyperparamTuner, sample_ppo_params, sample_dt_params
+except ImportError:
+    pass
+
 __all__ = [
     # Cosmos
     "CosmosFineTuner",
@@ -108,4 +114,9 @@ __all__ = [
     "create_trainer",
     "BeamSearchPlanner",
     "PlannerConfig",
+    
+    # Hyperparameter tuning
+    "HyperparamTuner",
+    "sample_ppo_params",
+    "sample_dt_params",
 ]
