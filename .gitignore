@@ -91,3 +91,6 @@ episodes/
 # Cosmos artifacts
 cosmos_data/
 cosmos_models/
+
+# Test checkpoints
+test_checkpoints/
