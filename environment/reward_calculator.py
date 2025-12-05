@@ -566,6 +566,109 @@ class PredictiveRewardStrategy(RewardStrategy):
         return reward
 
 
+class ProgressRewardStrategy(RewardStrategy):
+    """
+    Continuous progress-based rewards for smoother learning.
+    
+    This strategy provides dense, continuous feedback by rewarding:
+    1. Distance progress toward exit/destination (arrivals vs departures)
+    2. Altitude compliance with flight plan
+    3. Approach establishment (on final, on glidepath)
+    4. Waypoint advancement
+    
+    Combined with safety rewards from DefaultRewardStrategy for balanced learning.
+    """
+    
+    def __init__(self, config: RewardConfig):
+        """
+        Initialize progress reward strategy.
+        
+        Args:
+            config: Reward configuration
+        """
+        self.config = config
+        # Use default strategy for safety rewards
+        self._default_strategy = DefaultRewardStrategy(config)
+    
+    def calculate_reward(self, state: Dict[str, Any], prev_state: Dict[str, Any], 
+                        action: Optional[Dict[str, int]] = None) -> float:
+        """
+        Calculate reward with continuous progress feedback.
+        
+        Args:
+            state: Current game state
+            prev_state: Previous game state
+            action: Action taken (optional)
+            
+        Returns:
+            Calculated reward
+        """
+        reward = 0.0
+        
+        # Build lookup for aircraft matching
+        prev_by_callsign = {ac.get('callsign'): ac for ac in prev_state.get('aircraft', [])}
+        
+        for ac in state.get('aircraft', []):
+            callsign = ac.get('callsign')
+            if not callsign or callsign not in prev_by_callsign:
+                continue  # New aircraft, skip
+            
+            prev_ac = prev_by_callsign[callsign]
+            
+            # 1. Distance progress (handle arrivals vs departures)
+            is_arrival = ac.get('category') == 'arrival'
+            curr_dist = ac.get('distance', 0) or 0
+            prev_dist = prev_ac.get('distance', 0) or 0
+            
+            if curr_dist > 0 and prev_dist > 0:  # Both valid distances
+                if is_arrival:
+                    # Arrivals: reward decreasing distance (approaching airport)
+                    dist_change = prev_dist - curr_dist
+                else:
+                    # Departures: reward increasing distance (leaving airport)
+                    dist_change = curr_dist - prev_dist
+                
+                if dist_change > 0:
+                    reward += dist_change * self.config.distance_progress_scale
+            
+            # 2. Altitude compliance (only if at level flight)
+            assigned_alt = ac.get('flightPlanAltitude') or ac.get('assignedAltitude')
+            if assigned_alt and assigned_alt > 0:
+                climb_rate = ac.get('climbRate', 0) or 0
+                # Only reward compliance if aircraft is level (not transitioning)
+                # 500 ft/min is typical level flight threshold (small vertical speed)
+                LEVEL_FLIGHT_THRESHOLD_FPM = 500
+                if abs(climb_rate) < LEVEL_FLIGHT_THRESHOLD_FPM:
+                    curr_alt = ac.get('altitude', 0) or 0
+                    alt_diff = abs(curr_alt - assigned_alt)
+                    # Compliance: 1.0 if exact match, decreases with difference
+                    # 2000ft is standard altitude tolerance in aviation
+                    ALTITUDE_TOLERANCE_FT = 2000
+                    compliance = max(0, 1.0 - alt_diff / ALTITUDE_TOLERANCE_FT)
+                    reward += compliance * self.config.altitude_compliance_scale
+            
+            # 3. Approach establishment bonuses (one-time when established)
+            if ac.get('isOnFinal') and not prev_ac.get('isOnFinal'):
+                reward += self.config.on_final_bonus
+            if ac.get('isEstablishedOnGlidepath') and not prev_ac.get('isEstablishedOnGlidepath'):
+                reward += self.config.glidepath_bonus
+            
+            # 4. Waypoint progress (discrete but frequent)
+            curr_waypoint = ac.get('currentWaypoint')
+            prev_waypoint = prev_ac.get('currentWaypoint')
+            if curr_waypoint and prev_waypoint and curr_waypoint != prev_waypoint:
+                reward += self.config.waypoint_progress_bonus
+        
+        # 5. Combine with safety rewards from default strategy
+        # Get base reward from default strategy (conflicts, separations, exits)
+        safety_reward = self._default_strategy.calculate_reward(state, prev_state, action)
+        
+        # Add progress rewards to safety rewards
+        reward += safety_reward
+        
+        return reward
+
+
 class RewardCalculator:
     """
     Calculates rewards based on game state changes.
@@ -714,6 +817,7 @@ def create_reward_calculator(config: RewardConfig, strategy_name: str = "predict
         strategy_name: Name of strategy:
             - "default": Basic reward shaping with graduated penalties
             - "predictive": (RECOMMENDED) Trajectory prediction + credit assignment
+            - "progress": Continuous progress rewards for smoother learning
             - "safety": Focus on minimizing conflicts
             - "efficiency": Focus on maximizing throughput
         
@@ -725,7 +829,8 @@ def create_reward_calculator(config: RewardConfig, strategy_name: str = "predict
     """
     strategies = {
         "default": DefaultRewardStrategy,
-        "predictive": PredictiveRewardStrategy,  # NEW: Recommended for curriculum learning
+        "predictive": PredictiveRewardStrategy,  # Recommended for curriculum learning
+        "progress": ProgressRewardStrategy,  # Continuous progress rewards for smoother learning
         "safety": SafetyFocusedRewardStrategy,
         "efficiency": EfficiencyFocusedRewardStrategy,
     }

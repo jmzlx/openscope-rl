@@ -55,6 +55,13 @@ class RewardConfig:
     
     # Curriculum-specific (override per stage)
     min_score_threshold: float = -5000.0  # Termination threshold for curriculum stages
+    
+    # Progress reward parameters (for ProgressRewardStrategy)
+    distance_progress_scale: float = 0.1      # Reward per nm progress (conservative default)
+    altitude_compliance_scale: float = 0.05  # Reward for altitude compliance (conservative default)
+    on_final_bonus: float = 2.0               # Bonus when established on final
+    glidepath_bonus: float = 2.0              # Bonus when on glidepath
+    waypoint_progress_bonus: float = 1.0      # Bonus per waypoint advance
 
 
 @dataclass
