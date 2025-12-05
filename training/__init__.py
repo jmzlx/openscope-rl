@@ -72,6 +72,18 @@ try:
 except ImportError:
     pass
 
+# Config logger
+try:
+    from .config_logger import (
+        save_training_config,
+        load_training_config,
+        print_config_summary,
+        get_git_hash,
+        get_git_branch,
+    )
+except ImportError:
+    pass
+
 __all__ = [
     # Cosmos
     "CosmosFineTuner",
@@ -119,4 +131,11 @@ __all__ = [
     "HyperparamTuner",
     "sample_ppo_params",
     "sample_dt_params",
+    
+    # Config logger
+    "save_training_config",
+    "load_training_config",
+    "print_config_summary",
+    "get_git_hash",
+    "get_git_branch",
 ]
