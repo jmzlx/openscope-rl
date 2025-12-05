@@ -479,6 +479,14 @@ This project implements multiple RL approaches for comparison:
 - Sample-efficient learning
 - **Notebook**: `notebooks/10_dreamerv3_demo.ipynb`
 
+### 11. TD-MPC 2 ⭐⭐
+- Transformer-based world model for dynamics prediction
+- Model Predictive Control (MPC) with Cross-Entropy Method
+- Q-learning for long-term value estimation
+- Combines short-term planning with long-term value
+- Sample-efficient model-based RL
+- **Notebook**: `notebooks/11_tdmpc2_demo.ipynb`
+
 
 ## 📚 Documentation
 
@@ -488,7 +496,7 @@ This project implements multiple RL approaches for comparison:
 
 ### Notebooks
 - `notebooks/00_explore_openscope_api.ipynb` - Environment exploration
-- `notebooks/01-10_*.ipynb` - Approach-specific demos (see above)
+- `notebooks/01-11_*.ipynb` - Approach-specific demos (see above)
 
 
 ## 🏗️ Architecture

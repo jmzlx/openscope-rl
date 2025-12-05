@@ -61,6 +61,19 @@ try:
 except ImportError:
     pass
 
+# TD-MPC 2
+try:
+    from .tdmpc2 import (
+        TDMPC2Model,
+        TDMPC2Config,
+        LatentEncoder,
+        TransformerDynamics,
+        RewardPredictor,
+        TDMPC2QNetwork,
+    )
+except ImportError:
+    pass
+
 # Public API
 __all__ = [
     # Main model
@@ -109,6 +122,14 @@ __all__ = [
     # Trajectory Transformer
     "TrajectoryTransformer",
     "TrajectoryTransformerConfig",
+    
+    # TD-MPC 2
+    "TDMPC2Model",
+    "TDMPC2Config",
+    "LatentEncoder",
+    "TransformerDynamics",
+    "RewardPredictor",
+    "TDMPC2QNetwork",
 ]
 
 # Version info
