@@ -66,6 +66,18 @@ try:
 except ImportError:
     pass
 
+# Config logger
+try:
+    from .config_logger import (
+        save_training_config,
+        load_training_config,
+        print_config_summary,
+        get_git_hash,
+        get_git_branch,
+    )
+except ImportError:
+    pass
+
 __all__ = [
     # Cosmos
     "CosmosFineTuner",
@@ -108,4 +120,11 @@ __all__ = [
     "create_trainer",
     "BeamSearchPlanner",
     "PlannerConfig",
+    
+    # Config logger
+    "save_training_config",
+    "load_training_config",
+    "print_config_summary",
+    "get_git_hash",
+    "get_git_branch",
 ]
